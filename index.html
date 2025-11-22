@@ -1,36 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Morning Quest</title>
-    <link rel="manifest" href="manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+
         body {
             font-family: 'M PLUS Rounded 1c', sans-serif;
-            background-color: #f0f9ff; /* sky-50 */
+            background-color: #f0f9ff;
+            /* sky-50 */
             overscroll-behavior: none;
         }
+
         /* Custom scrollbar for task lists */
         ::-webkit-scrollbar {
             width: 8px;
         }
+
         ::-webkit-scrollbar-track {
             background: transparent;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 4px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
@@ -42,16 +49,13 @@
   }
 }
 </script>
-<link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./index.css">
 </head>
+
 <body>
     <div id="root"></div>
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-          .then(() => console.log('Service Worker Registered'));
-      }
-    </script>
-<script type="module" src="./index.tsx"></script>
+
+    <script type="module" src="./index.tsx"></script>
 </body>
+
 </html>
