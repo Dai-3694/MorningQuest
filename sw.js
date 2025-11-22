@@ -3,8 +3,8 @@ self.addEventListener('install', (e) => {
     caches.open('morning-quest-store').then((cache) => {
       // Basic caching if needed, keeping it minimal for now
       return cache.addAll([
-        '/',
-        '/index.html',
+        './',
+        './index.html',
       ]);
     })
   );

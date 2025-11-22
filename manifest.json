@@ -1,8 +1,7 @@
-
 {
   "name": "Morning Quest",
   "short_name": "MorningQuest",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0ea5e9",
