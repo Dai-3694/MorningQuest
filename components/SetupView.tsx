@@ -20,7 +20,7 @@ interface SetupViewProps {
 export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setTasks, departureTime, setDepartureTime, onStart, themeColor }) => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{ title: string; duration: number }>({ title: '', duration: 0 });
@@ -58,17 +58,17 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
 
   const handleDelete = (id: string) => {
     if (window.confirm('このタスクを削除しますか？')) {
-        setTasks(tasks.filter(t => t.id !== id));
+      setTasks(tasks.filter(t => t.id !== id));
     }
   };
 
   const handleReset = () => {
-    if(window.confirm('初期設定に戻しますか？')) {
+    if (window.confirm('初期設定に戻しますか？')) {
       setTasks(DEFAULT_TASKS);
       setEditingId(null);
     }
   };
-  
+
   const moveTask = (index: number, direction: 'up' | 'down') => {
     if ((direction === 'up' && index === 0) || (direction === 'down' && index === tasks.length - 1)) return;
     const newTasks = [...tasks];
@@ -85,9 +85,9 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
 
   const handleSaveEdit = () => {
     if (!editingId) return;
-    const newTasks = tasks.map(t => 
-      t.id === editingId 
-        ? { ...t, title: editValues.title, durationMinutes: Math.max(1, editValues.duration) } 
+    const newTasks = tasks.map(t =>
+      t.id === editingId
+        ? { ...t, title: editValues.title, durationMinutes: Math.max(1, editValues.duration) }
         : t
     );
     setTasks(newTasks);
@@ -107,19 +107,19 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
   return (
     <div className="h-full overflow-y-auto pb-32 scroll-smooth">
       <div className="p-4 space-y-6 max-w-xl mx-auto">
-        
+
         {/* Name Input & Header */}
         <header className="mt-8 text-center space-y-2">
           <div className="flex justify-center items-center">
             <div className="relative group">
-                <input 
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="名前を入力"
-                    className={`text-2xl font-black text-center bg-transparent border-b-2 border-transparent hover:border-slate-300 focus:border-slate-400 focus:ring-0 w-48 transition-all ${theme.text} ${theme.placeholder}`}
-                />
-                <Pencil size={14} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="名前を入力"
+                className={`text-2xl font-black text-center bg-transparent border-b-2 border-transparent hover:border-slate-300 focus:border-slate-400 focus:ring-0 w-48 transition-all ${theme.text} ${theme.placeholder}`}
+              />
+              <Pencil size={14} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </div>
           </div>
           <h1 className="text-slate-400 font-bold text-xs tracking-widest uppercase">Morning Quest</h1>
@@ -131,7 +131,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
             <Clock size={24} className={theme.text} />
             <span>出発時刻</span>
           </div>
-          <input 
+          <input
             type="time"
             value={departureTime}
             onChange={(e) => setDepartureTime(e.target.value)}
@@ -166,29 +166,29 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
 
         {/* Total Time Chart (Compact) */}
         <div className="bg-white p-4 rounded-2xl shadow-sm relative h-40 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={35}
-                  outerRadius={55}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute pointer-events-none text-center">
-                <div className="text-xl font-black text-slate-700">{Math.floor(totalTimeMinutes / 60)}h {totalTimeMinutes % 60}m</div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Total</div>
-            </div>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={35}
+                outerRadius={55}
+                paddingAngle={5}
+                dataKey="value"
+                stroke="none"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute pointer-events-none text-center">
+            <div className="text-xl font-black text-slate-700">{Math.floor(totalTimeMinutes / 60)}h {totalTimeMinutes % 60}m</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase">Total</div>
+          </div>
         </div>
 
         {/* Task List */}
@@ -199,69 +199,69 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
               <RotateCcw size={10} /> リセット
             </button>
           </div>
-          
+
           {tasks.map((task, index) => (
             <React.Fragment key={task.id}>
               {editingId === task.id ? (
                 // Edit Mode
                 <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-300 flex flex-col gap-3 animate-in zoom-in-95">
-                    <div className="flex items-center gap-2">
-                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm" style={{ backgroundColor: task.color }}>
-                          <IconDisplay icon={task.icon} size={16} />
-                       </div>
-                       <input 
-                        value={editValues.title}
-                        onChange={e => setEditValues({...editValues, title: e.target.value})}
-                        className="flex-1 p-2 rounded-lg border border-indigo-200 text-base font-bold text-slate-700"
-                        autoFocus
-                      />
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm" style={{ backgroundColor: task.color }}>
+                      <IconDisplay icon={task.icon} size={16} />
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-indigo-100">
-                          <button onClick={() => setEditValues(prev => ({...prev, duration: Math.max(1, prev.duration - 1)}))} className="p-1 bg-slate-100 rounded hover:bg-indigo-100"><Minus size={16} /></button>
-                          <span className="font-black text-indigo-700 w-8 text-center">{editValues.duration}</span>
-                          <button onClick={() => setEditValues(prev => ({...prev, duration: prev.duration + 1}))} className="p-1 bg-slate-100 rounded hover:bg-indigo-100"><Plus size={16} /></button>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={handleSaveEdit} className="p-2 bg-green-500 text-white rounded-lg"><Check size={18} /></button>
-                        <button onClick={handleCancelEdit} className="p-2 bg-slate-200 text-slate-500 rounded-lg"><X size={18} /></button>
-                      </div>
+                    <input
+                      value={editValues.title}
+                      onChange={e => setEditValues({ ...editValues, title: e.target.value })}
+                      className="flex-1 p-2 rounded-lg border border-indigo-200 text-base font-bold text-slate-700"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-indigo-100">
+                      <button onClick={() => setEditValues(prev => ({ ...prev, duration: Math.max(1, prev.duration - 1) }))} className="p-1 bg-slate-100 rounded hover:bg-indigo-100"><Minus size={16} /></button>
+                      <span className="font-black text-indigo-700 w-8 text-center">{editValues.duration}</span>
+                      <button onClick={() => setEditValues(prev => ({ ...prev, duration: prev.duration + 1 }))} className="p-1 bg-slate-100 rounded hover:bg-indigo-100"><Plus size={16} /></button>
                     </div>
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveEdit} className="p-2 bg-green-500 text-white rounded-lg"><Check size={18} /></button>
+                      <button onClick={handleCancelEdit} className="p-2 bg-slate-200 text-slate-500 rounded-lg"><X size={18} /></button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 // View Mode
                 <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3 group">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm" style={{ backgroundColor: task.color }}>
-                      <IconDisplay icon={task.icon} size={20} />
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm" style={{ backgroundColor: task.color }}>
+                    <IconDisplay icon={task.icon} size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-700 truncate">{task.title}</div>
+                    <div className="text-xs font-bold text-slate-400">{task.durationMinutes}分</div>
+                  </div>
+                  <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <div className="flex flex-col gap-1">
+                      <button onClick={() => moveTask(index, 'up')} disabled={index === 0} className="text-slate-300 hover:text-slate-600 disabled:opacity-0"><ArrowUp size={14} /></button>
+                      <button onClick={() => moveTask(index, 'down')} disabled={index === tasks.length - 1} className="text-slate-300 hover:text-slate-600 disabled:opacity-0"><ArrowDown size={14} /></button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-slate-700 truncate">{task.title}</div>
-                      <div className="text-xs font-bold text-slate-400">{task.durationMinutes}分</div>
-                    </div>
-                    <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                       <div className="flex flex-col gap-1">
-                          <button onClick={() => moveTask(index, 'up')} disabled={index===0} className="text-slate-300 hover:text-slate-600 disabled:opacity-0"><ArrowUp size={14} /></button>
-                          <button onClick={() => moveTask(index, 'down')} disabled={index===tasks.length-1} className="text-slate-300 hover:text-slate-600 disabled:opacity-0"><ArrowDown size={14} /></button>
-                       </div>
-                       <button onClick={() => handleStartEdit(task)} className="p-2 text-slate-400 hover:text-indigo-500"><Pencil size={16} /></button>
-                       <button onClick={() => handleDelete(task.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
-                    </div>
+                    <button onClick={() => handleStartEdit(task)} className="p-2 text-slate-400 hover:text-indigo-500"><Pencil size={16} /></button>
+                    <button onClick={() => handleDelete(task.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                  </div>
                 </div>
               )}
             </React.Fragment>
           ))}
 
-          <button 
+          <button
             onClick={() => {
-                const newTask: Task = {
-                    id: Date.now().toString(),
-                    title: '新しいタスク',
-                    durationMinutes: 5,
-                    icon: TaskIcon.DEFAULT,
-                    color: '#cbd5e1'
-                };
-                setTasks([...tasks, newTask]);
-                handleStartEdit(newTask);
+              const newTask: Task = {
+                id: Date.now().toString(),
+                title: '新しいタスク',
+                durationMinutes: 5,
+                icon: TaskIcon.DEFAULT,
+                color: '#cbd5e1'
+              };
+              setTasks([...tasks, newTask]);
+              handleStartEdit(newTask);
             }}
             className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 hover:border-sky-400 hover:text-sky-500 hover:bg-sky-50 font-bold flex justify-center items-center gap-2"
           >

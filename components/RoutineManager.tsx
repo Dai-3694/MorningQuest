@@ -4,6 +4,9 @@ import { Task, AppMode, DEFAULT_TASKS, ChildState } from '../types';
 import { SetupView } from './SetupView';
 import { ActiveView } from './ActiveView';
 import { CompletionView } from './CompletionView';
+import { LogView } from './LogView';
+import { StampView } from './StampView';
+import { MissionLog, StampCard } from '../types';
 
 interface RoutineManagerProps {
   childId: string;
@@ -13,11 +16,13 @@ interface RoutineManagerProps {
 
 export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initialName, themeColor }) => {
   const storageKey = `mq_state_${childId}`;
-  
+
   const [mode, setMode] = useState<AppMode>('setup');
   const [name, setName] = useState<string>(initialName);
   const [tasks, setTasks] = useState<Task[]>(DEFAULT_TASKS);
   const [departureTime, setDepartureTime] = useState<string>('08:00');
+  const [logs, setLogs] = useState<MissionLog[]>([]);
+  const [stampCard, setStampCard] = useState<StampCard>({ currentStamps: 0, totalRewards: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load state from local storage
@@ -29,6 +34,8 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
         setTasks(parsed.tasks || DEFAULT_TASKS);
         setDepartureTime(parsed.departureTime || '08:00');
         if (parsed.name) setName(parsed.name);
+        if (parsed.logs) setLogs(parsed.logs);
+        if (parsed.stampCard) setStampCard(parsed.stampCard);
       } catch (e) {
         console.error("Failed to load state", e);
       }
@@ -39,10 +46,10 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
   // Save state whenever it changes
   useEffect(() => {
     if (isLoaded) {
-      const stateToSave: ChildState = { name, tasks, departureTime };
+      const stateToSave: ChildState = { name, tasks, departureTime, logs, stampCard };
       localStorage.setItem(storageKey, JSON.stringify(stateToSave));
     }
-  }, [name, tasks, departureTime, isLoaded, storageKey]);
+  }, [name, tasks, departureTime, logs, stampCard, isLoaded, storageKey]);
 
   // Prevent accidental navigation away during active mode
   useEffect(() => {
@@ -69,23 +76,62 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
       </div>
 
       {mode === 'setup' && (
-        <SetupView 
+        <SetupView
           name={name}
           setName={setName}
-          tasks={tasks} 
-          setTasks={setTasks} 
+          tasks={tasks}
+          setTasks={setTasks}
           departureTime={departureTime}
           setDepartureTime={setDepartureTime}
           onStart={() => setMode('active')}
+          onLog={() => setMode('log')}
+          onStamp={() => setMode('stamp')}
           themeColor={themeColor}
         />
       )}
-      
+
       {mode === 'active' && (
-        <ActiveView 
+        <ActiveView
           tasks={tasks}
           departureTime={departureTime}
-          onComplete={() => setMode('completed')}
+          onComplete={() => {
+            // Calculate success (finished before departure time)
+            const now = new Date();
+            const [deptHour, deptMinute] = departureTime.split(':').map(Number);
+            const deptDate = new Date();
+            deptDate.setHours(deptHour, deptMinute, 0, 0);
+
+            const isSuccess = now <= deptDate;
+            const totalDurationSeconds = tasks.reduce((acc, t) => acc + t.durationMinutes * 60, 0); // Approximate based on plan, ideally track real time
+
+            // Update Logs
+            const newLog: MissionLog = {
+              date: now.toISOString().split('T')[0],
+              completedAt: now.toISOString(),
+              totalDurationSeconds, // Note: In a real app we'd track actual elapsed time
+              isSuccess
+            };
+            setLogs(prev => [...prev, newLog]);
+
+            // Update Stamps if success
+            if (isSuccess) {
+              setStampCard(prev => {
+                const nextStamps = prev.currentStamps + 1;
+                if (nextStamps >= 10) {
+                  return {
+                    currentStamps: 0,
+                    totalRewards: prev.totalRewards + 1
+                  };
+                }
+                return {
+                  ...prev,
+                  currentStamps: nextStamps
+                };
+              });
+            }
+
+            setMode('completed');
+          }}
           onBack={() => {
             if (window.confirm('本当にやめますか？')) {
               setMode('setup');
@@ -95,8 +141,24 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
       )}
 
       {mode === 'completed' && (
-        <CompletionView 
+        <CompletionView
           onReset={() => setMode('setup')}
+        />
+      )}
+
+      {mode === 'log' && (
+        <LogView
+          logs={logs}
+          onBack={() => setMode('setup')}
+          themeColor={themeColor}
+        />
+      )}
+
+      {mode === 'stamp' && (
+        <StampView
+          stampCard={stampCard}
+          onBack={() => setMode('setup')}
+          themeColor={themeColor}
         />
       )}
     </div>
