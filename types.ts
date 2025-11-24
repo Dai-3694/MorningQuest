@@ -19,12 +19,26 @@ export interface Task {
   color: string;
 }
 
-export type AppMode = 'setup' | 'active' | 'completed';
+export type AppMode = 'setup' | 'active' | 'completed' | 'log' | 'stamp';
+
+export interface MissionLog {
+  date: string; // YYYY-MM-DD
+  completedAt: string; // ISO string
+  totalDurationSeconds: number;
+  isSuccess: boolean; // Completed before departure time
+}
+
+export interface StampCard {
+  currentStamps: number;
+  totalRewards: number;
+}
 
 export interface ChildState {
   name: string; // プレイヤーの名前を追加
   tasks: Task[];
   departureTime: string; // Format "HH:mm"
+  logs?: MissionLog[];
+  stampCard?: StampCard;
 }
 
 export const DEFAULT_TASKS: Task[] = [
