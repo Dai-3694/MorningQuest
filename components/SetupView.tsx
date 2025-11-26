@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Task, TaskIcon, DEFAULT_TASKS } from '../types';
 import { IconDisplay } from './IconDisplay';
 import { generateSchedule } from '../services/geminiService';
-import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Pencil, Check, X, Minus, Clock, User } from 'lucide-react';
+import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Pencil, Check, X, Minus, Clock, User, ClipboardList, Award } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface SetupViewProps {
@@ -14,10 +14,12 @@ interface SetupViewProps {
   departureTime: string;
   setDepartureTime: (time: string) => void;
   onStart: () => void;
+  onLog: () => void;
+  onStamp: () => void;
   themeColor: string;
 }
 
-export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setTasks, departureTime, setDepartureTime, onStart, themeColor }) => {
+export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setTasks, departureTime, setDepartureTime, onStart, onLog, onStamp, themeColor }) => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -108,10 +110,20 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
     <div className="h-full overflow-y-auto pb-32 scroll-smooth">
       <div className="p-4 space-y-6 max-w-xl mx-auto">
 
-        {/* Name Input & Header */}
-        <header className="mt-8 text-center space-y-2">
-          <div className="flex justify-center items-center">
-            <div className="relative group">
+        {/* Header with Navigation */}
+        <header className="mt-2 text-center space-y-2 relative">
+          {/* Navigation Icons */}
+          <div className="absolute top-0 right-0 flex gap-1">
+<button onClick={onLog} className={`p-2 text-slate-400 ${themeColor === 'rose' ? 'hover:text-rose-500' : 'hover:text-sky-500'} bg-white rounded-full shadow-sm border border-slate-200`}>
+  <ClipboardList size={18} />
+</button>
+<button onClick={onStamp} className={`p-2 text-slate-400 ${themeColor === 'rose' ? 'hover:text-rose-500' : 'hover:text-sky-500'} bg-white rounded-full shadow-sm border border-slate-200`}>
+  <Award size={18} />
+</button>
+          </div>
+
+          <div className="pt-12"> {/* Add padding to parent */}
+            <div className="relative group inline-flex justify-center items-center">
               <input
                 type="text"
                 value={name}
@@ -121,8 +133,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
               />
               <Pencil size={14} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </div>
+            <h1 className="text-slate-400 font-bold text-xs tracking-widest uppercase">Morning Quest</h1>
           </div>
-          <h1 className="text-slate-400 font-bold text-xs tracking-widest uppercase">Morning Quest</h1>
         </header>
 
         {/* Departure Time Setting */}
