@@ -106,7 +106,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
 
             // Update Logs
             const newLog: MissionLog = {
-              date: now.toISOString().split('T')[0],
+              date: now.toLocaleDateString('sv-SE'),
               completedAt: now.toISOString(),
               totalDurationSeconds, // Note: In a real app we'd track actual elapsed time
               isSuccess
