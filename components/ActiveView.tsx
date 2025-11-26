@@ -134,7 +134,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     };
 
     calculateMetrics();
-  }, [departureTime, tasks, currentIndex, currentTime]);
+  }, [departureTime, tasks, currentIndex, currentTime, timeLeft]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
