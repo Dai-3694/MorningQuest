@@ -30,16 +30,6 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const timerRef = useRef<number | null>(null);
-  const urgencyTimerRef = useRef<number | null>(null);
-
   const currentTask = tasks[currentIndex];
   const nextTask = tasks[currentIndex + 1];
 
@@ -78,24 +68,19 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     setTimeLeft(currentTask.durationMinutes * 60);
   }, [currentIndex, currentTask]);
 
-  // Main Timer Loop
+  // Effect 1: The Ticker. This sets up a single interval on mount to update the time.
   useEffect(() => {
-    timerRef.current = window.setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 0) return 0;
-        return prev - 1;
-      });
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date());
+      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
+    return () => clearInterval(timerId);
+  }, []); // An empty dependency array ensures this effect runs only once.
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
-  // Urgency & Metrics Calculation Loop
+  // Effect 2: The Calculator. This runs whenever the data it depends on changes.
   useEffect(() => {
     const calculateMetrics = () => {
-      const now = new Date();
+      const now = currentTime; // Use the latest time from the ticker
 
       // Parse Departure Time
       const [depH, depM] = departureTime.split(':').map(Number);
@@ -111,7 +96,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
       const msToDeparture = departure.getTime() - now.getTime();
       const minutesToDeparture = msToDeparture / 60000;
 
-      // Calculate Remaining Duration of All Tasks (Current remaining + Future tasks)
+      // Calculate Remaining Duration of All Tasks using the latest timeLeft
       let remainingSeconds = timeLeft;
       for (let i = currentIndex + 1; i < tasks.length; i++) {
         remainingSeconds += tasks[i].durationMinutes * 60;
@@ -135,12 +120,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     };
 
     calculateMetrics();
-    urgencyTimerRef.current = window.setInterval(calculateMetrics, 1000);
-
-    return () => {
-      if (urgencyTimerRef.current) clearInterval(urgencyTimerRef.current);
-    };
-  }, [departureTime, tasks, currentIndex, timeLeft]);
+  }, [currentTime, timeLeft, currentIndex, departureTime, tasks]); // Re-run when time, tasks, or progress changes.
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
