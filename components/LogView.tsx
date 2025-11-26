@@ -101,7 +101,7 @@ export const LogView: React.FC<LogViewProps> = ({ logs, onBack, themeColor }) =>
                     </div>
                     <div className="space-y-3">
                         {sortedLogs.slice().reverse().slice(0, 10).map((log, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                            <div key={log.completedAt} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                                 <div className="flex flex-col">
                                     <span className="font-bold text-gray-800">
                                         {new Date(log.date).toLocaleDateString('ja-JP')}
