@@ -30,14 +30,6 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const timerRef = useRef<number | null>(null);
   const urgencyTimerRef = useRef<number | null>(null);
 
   const currentTask = tasks[currentIndex];
@@ -80,16 +72,18 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   // Main Timer Loop
   useEffect(() => {
-    timerRef.current = window.setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 0) return 0;
-        return prev - 1;
-      });
-    }, 1000);
+    let lastTickTime = Date.now();
+    const timerId = setInterval(() => {
+      const now = Date.now();
+      const elapsedSeconds = Math.round((now - lastTickTime) / 1000);
+      lastTickTime = now;
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+      setCurrentTime(new Date(now));
+      if (elapsedSeconds > 0) {
+        setTimeLeft(prev => Math.max(0, prev - elapsedSeconds));
+      }
+    }, 1000);
+    return () => clearInterval(timerId);
   }, []);
 
   // Urgency & Metrics Calculation Loop
