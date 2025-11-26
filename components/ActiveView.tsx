@@ -38,7 +38,6 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
   }, []);
 
   const timerRef = useRef<number | null>(null);
-  const urgencyTimerRef = useRef<number | null>(null);
 
   const currentTask = tasks[currentIndex];
   const nextTask = tasks[currentIndex + 1];
@@ -95,7 +94,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
   // Urgency & Metrics Calculation Loop
   useEffect(() => {
     const calculateMetrics = () => {
-      const now = new Date();
+      const now = currentTime;
 
       // Parse Departure Time
       const [depH, depM] = departureTime.split(':').map(Number);
@@ -135,12 +134,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     };
 
     calculateMetrics();
-    urgencyTimerRef.current = window.setInterval(calculateMetrics, 1000);
-
-    return () => {
-      if (urgencyTimerRef.current) clearInterval(urgencyTimerRef.current);
-    };
-  }, [departureTime, tasks, currentIndex, timeLeft]);
+  }, [departureTime, tasks, currentIndex, currentTime]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
