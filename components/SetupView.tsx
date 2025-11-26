@@ -114,12 +114,12 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
         <header className="mt-2 text-center space-y-2 relative">
           {/* Navigation Icons */}
           <div className="absolute top-0 right-0 flex gap-1">
-            <button onClick={onLog} className="p-2 text-slate-400 hover:text-sky-500 bg-white rounded-full shadow-sm border border-slate-200">
-              <ClipboardList size={18} />
-            </button>
-            <button onClick={onStamp} className="p-2 text-slate-400 hover:text-rose-500 bg-white rounded-full shadow-sm border border-slate-200">
-              <Award size={18} />
-            </button>
+<button onClick={onLog} className={`p-2 text-slate-400 ${themeColor === 'rose' ? 'hover:text-rose-500' : 'hover:text-sky-500'} bg-white rounded-full shadow-sm border border-slate-200`}>
+  <ClipboardList size={18} />
+</button>
+<button onClick={onStamp} className={`p-2 text-slate-400 ${themeColor === 'rose' ? 'hover:text-rose-500' : 'hover:text-sky-500'} bg-white rounded-full shadow-sm border border-slate-200`}>
+  <Award size={18} />
+</button>
           </div>
 
           <div className="pt-12"> {/* Add padding to parent */}
