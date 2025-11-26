@@ -10,7 +10,7 @@ interface LogViewProps {
 }
 
 export const LogView: React.FC<LogViewProps> = ({ logs, onBack, themeColor }) => {
-    const sortedLogs = [...logs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedLogs = [...logs].sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime());
 
     // Prepare data for chart (last 7 entries or all if less)
     const chartData = sortedLogs.slice(-14).map(log => ({
