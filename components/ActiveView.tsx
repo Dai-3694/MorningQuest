@@ -227,9 +227,9 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
         <div className="relative mt-2">
           <div className={`flex flex-col items-center justify-center w-full`}>
             <div
-              className={`w-52 h-52 rounded-full flex items-center justify-center mb-2 shadow-2xl border-[16px] transition-all duration-300 bg-white ${isOvertime ? 'border-rose-500 animate-shake' : metrics.level === 'danger' ? 'border-rose-400' : metrics.level === 'warning' ? 'border-amber-400' : 'border-emerald-400'}`}
+              className={`w-48 h-48 rounded-full flex items-center justify-center mb-2 shadow-2xl border-[14px] transition-all duration-300 bg-white ${isOvertime ? 'border-rose-500 animate-shake' : metrics.level === 'danger' ? 'border-rose-400' : metrics.level === 'warning' ? 'border-amber-400' : 'border-emerald-400'}`}
             >
-              <IconDisplay icon={currentTask.icon} size={100} className={visualConfig.text} />
+              <IconDisplay icon={currentTask.icon} size={90} className={visualConfig.text} />
             </div>
 
             <div className={`text-7xl font-black font-mono tabular-nums tracking-tighter drop-shadow-sm ${isOvertime ? 'text-rose-600 animate-pulse' : 'text-slate-800'}`}>
@@ -237,8 +237,11 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
             </div>
 
             {/* Current Time Display */}
-            <div className="text-3xl font-bold text-slate-500 bg-white/50 px-4 py-1 rounded-full shadow-md border border-white mt-4">
-               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div className="text-center mt-4">
+              <span className="text-sm font-bold text-slate-500">いまのじこく</span>
+              <div className="text-3xl font-bold text-slate-500 bg-white/50 px-4 py-1 rounded-full shadow-md border border-white">
+                 {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
             </div>
 
 
