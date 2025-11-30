@@ -188,9 +188,6 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
             <span>{visualConfig.message}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="text-xl font-black text-slate-600 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
-              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
             <button onClick={onBack} className="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded-full text-slate-600 font-bold">
               戻る
             </button>
@@ -239,7 +236,13 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
               {formatTime(timeLeft)}
             </div>
 
-            <h2 className="text-3xl font-black text-slate-800 mt-1 text-center leading-tight px-2 drop-shadow-sm">
+            {/* Current Time Display */}
+            <div className="text-3xl font-bold text-slate-500 bg-white/50 px-4 py-1 rounded-full shadow-md border border-white mt-4">
+               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+
+
+            <h2 className="text-3xl font-black text-slate-800 mt-4 text-center leading-tight px-2 drop-shadow-sm">
               {currentTask.title}
             </h2>
           </div>
