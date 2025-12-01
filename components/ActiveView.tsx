@@ -201,7 +201,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
       <div className="flex-1 flex flex-col overflow-y-auto p-4 gap-4">
 
         {/* フェーズ1: 起床前 */}
-        {isWakeUpPhase && wakeUpTask ? (
+        {isWakeUpPhase ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
             <div className="w-32 h-32 rounded-full bg-amber-400 flex items-center justify-center shadow-2xl border-8 border-white">
               <Sun size={64} className="text-white" />
