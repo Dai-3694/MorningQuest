@@ -227,7 +227,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
         <div className="relative mt-2">
           <div className={`flex flex-col items-center justify-center w-full`}>
             <div
-              className={`w-48 h-48 rounded-full flex items-center justify-center mb-2 shadow-2xl border-[14px] transition-all duration-300 bg-white ${isOvertime ? 'border-rose-500 animate-shake' : metrics.level === 'danger' ? 'border-rose-400' : metrics.level === 'warning' ? 'border-amber-400' : 'border-emerald-400'}`}
+              className={`w-28 h-28 rounded-full flex items-center justify-center mb-2 shadow-2xl border-[10px] transition-all duration-300 bg-white ${isOvertime ? 'border-rose-500 animate-shake' : metrics.level === 'danger' ? 'border-rose-400' : metrics.level === 'warning' ? 'border-amber-400' : 'border-emerald-400'}`}
             >
               <IconDisplay icon={currentTask.icon} size={63} className={visualConfig.text} />
             </div>
