@@ -59,6 +59,14 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
   };
 
   const handleDelete = (id: string) => {
+    const taskToDelete = tasks.find(t => t.id === id);
+    if (!taskToDelete) return;
+
+    if (taskToDelete.type === 'start' || taskToDelete.type === 'end') {
+      alert('「起きる」と「出発」のミッションは削除できません。');
+      return;
+    }
+
     if (window.confirm('このタスクを削除しますか？')) {
       setTasks(tasks.filter(t => t.id !== id));
     }
@@ -73,8 +81,12 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
 
   const moveTask = (index: number, direction: 'up' | 'down') => {
     if ((direction === 'up' && index === 0) || (direction === 'down' && index === tasks.length - 1)) return;
-    const newTasks = [...tasks];
+    
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    // Prevent moving fixed tasks (start/end) or moving flexible tasks past them
+    if (tasks[index].type !== 'flexible' || tasks[targetIndex].type !== 'flexible') return;
+
+    const newTasks = [...tasks];
     [newTasks[index], newTasks[targetIndex]] = [newTasks[targetIndex], newTasks[index]];
     setTasks(newTasks);
   };
@@ -252,11 +264,25 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
                   </div>
                   <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <div className="flex flex-col gap-1">
-                      <button onClick={() => moveTask(index, 'up')} disabled={index === 0} className="text-slate-300 hover:text-slate-600 disabled:opacity-0"><ArrowUp size={14} /></button>
-                      <button onClick={() => moveTask(index, 'down')} disabled={index === tasks.length - 1} className="text-slate-300 hover:text-slate-600 disabled:opacity-0"><ArrowDown size={14} /></button>
+                      <button 
+                        onClick={() => moveTask(index, 'up')} 
+                        disabled={index === 0 || tasks[index - 1]?.type !== 'flexible' || task.type !== 'flexible'} 
+                        className="text-slate-300 hover:text-slate-600 disabled:opacity-0"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button 
+                        onClick={() => moveTask(index, 'down')} 
+                        disabled={index === tasks.length - 1 || tasks[index + 1]?.type !== 'flexible' || task.type !== 'flexible'} 
+                        className="text-slate-300 hover:text-slate-600 disabled:opacity-0"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
                     </div>
                     <button onClick={() => handleStartEdit(task)} className="p-2 text-slate-400 hover:text-indigo-500"><Pencil size={16} /></button>
-                    <button onClick={() => handleDelete(task.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                    {task.type === 'flexible' && (
+                      <button onClick={() => handleDelete(task.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                    )}
                   </div>
                 </div>
               )}
@@ -273,7 +299,17 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
                 color: '#cbd5e1',
                 type: 'flexible'
               };
-              setTasks([...tasks, newTask]);
+              
+              // Insert before the end task if it exists
+              const endTaskIndex = tasks.findIndex(t => t.type === 'end');
+              if (endTaskIndex !== -1) {
+                const newTasks = [...tasks];
+                newTasks.splice(endTaskIndex, 0, newTask);
+                setTasks(newTasks);
+              } else {
+                setTasks([...tasks, newTask]);
+              }
+              
               handleStartEdit(newTask);
             }}
             className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 hover:border-sky-400 hover:text-sky-500 hover:bg-sky-50 font-bold flex justify-center items-center gap-2"
