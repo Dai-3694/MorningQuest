@@ -169,6 +169,12 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
             <span>{visualConfig.message}</span>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-slate-700 bg-slate-500/10 px-3 py-1 rounded-full border border-black/5 shadow-sm">
+              <Clock size={16} className="opacity-50" />
+              <span className="font-bold text-lg tabular-nums">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
             <button onClick={onBack} className="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded-full text-slate-600 font-bold">
               戻る
             </button>
@@ -306,14 +312,6 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
             )}
           </>
         )}
-
-        {/* 現在時刻 */}
-        <div className="text-center pb-4">
-          <span className="text-sm font-bold text-slate-500">いまのじこく</span>
-          <div className="text-2xl font-bold text-slate-600 bg-white/50 px-4 py-1 rounded-full shadow-sm border border-white inline-block ml-2">
-            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        </div>
 
       </div>
     </div>
