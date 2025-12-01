@@ -29,13 +29,13 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     minutesToDeparture: 0
   });
 
-  // タスクの分類
-  const wakeUpTask = tasks[0]; // 起きる（固定・最初）
-  const departureTask = tasks[tasks.length - 1]; // 出発（固定・最後）
-  const flexibleTasks = tasks.slice(1, -1); // 自由順タスク
+  // タスクの分類（typeプロパティを使用して堅牢に分類）
+  const wakeUpTask = tasks.find(t => t.type === 'start');
+  const departureTask = tasks.find(t => t.type === 'end');
+  const flexibleTasks = tasks.filter(t => t.type === 'flexible');
 
-  // フェーズ判定
-  const isWakeUpPhase = !completedTaskIds.has(wakeUpTask.id);
+  // フェーズ判定（wakeUpTaskが存在しない場合は起床フェーズをスキップ）
+  const isWakeUpPhase = wakeUpTask ? !completedTaskIds.has(wakeUpTask.id) : false;
   const allFlexibleCompleted = flexibleTasks.every(t => completedTaskIds.has(t.id));
   const canDepart = !isWakeUpPhase && allFlexibleCompleted;
 
@@ -218,6 +218,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
         ) : (
           <>
             {/* 起きる完了表示 */}
+            {wakeUpTask && (
             <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-sm">
                 <Check size={20} />
@@ -228,6 +229,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
               </div>
               <span className="text-emerald-600 font-black text-sm">完了!</span>
             </div>
+            )}
 
             {/* フェーズ2: 自由順タスクリスト */}
             <div className="bg-white/60 rounded-2xl p-3 space-y-2 border border-white/50">
@@ -273,6 +275,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
             </div>
 
             {/* フェーズ3: 出発ボタン */}
+            {departureTask && (
             <div className={`p-4 rounded-2xl border-2 ${canDepart ? 'bg-rose-50 border-rose-300' : 'bg-slate-100 border-slate-200'}`}>
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${canDepart ? 'bg-rose-500 text-white' : 'bg-slate-300 text-slate-500'}`}>
@@ -300,6 +303,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
                 <DoorOpen size={28} />
               </button>
             </div>
+            )}
           </>
         )}
 

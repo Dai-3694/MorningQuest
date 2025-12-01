@@ -270,7 +270,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
                 title: '新しいタスク',
                 durationMinutes: 5,
                 icon: TaskIcon.DEFAULT,
-                color: '#cbd5e1'
+                color: '#cbd5e1',
+                type: 'flexible'
               };
               setTasks([...tasks, newTask]);
               handleStartEdit(newTask);
