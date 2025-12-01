@@ -125,7 +125,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   // タスク完了ハンドラー
   const handleCompleteTask = (taskId: string) => {
-    setCompletedTaskIds(prev => new Set([...prev, taskId]));
+    setCompletedTaskIds(prev => new Set(prev).add(taskId));
   };
 
   // 出発ハンドラー
