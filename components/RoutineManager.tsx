@@ -1,12 +1,35 @@
 
 import React, { useState, useEffect } from 'react';
-import { Task, AppMode, DEFAULT_TASKS, ChildState } from '../types';
+import { Task, AppMode, DEFAULT_TASKS, ChildState, TaskType } from '../types';
 import { SetupView } from './SetupView';
 import { ActiveView } from './ActiveView';
 import { CompletionView } from './CompletionView';
 import { LogView } from './LogView';
 import { StampView } from './StampView';
 import { MissionLog, StampCard } from '../types';
+
+/**
+ * ローカルストレージから読み込んだタスクに type プロパティがない場合、
+ * デフォルト値を付与するマイグレーション関数
+ */
+const migrateTasksWithType = (tasks: Task[]): Task[] => {
+  return tasks.map((task, index, arr) => {
+    // すでに type プロパティがあればそのまま返す
+    if (task.type) {
+      return task;
+    }
+    
+    // type プロパティがない場合、位置に基づいてデフォルト値を付与
+    let type: TaskType = 'flexible';
+    if (index === 0) {
+      type = 'start';
+    } else if (index === arr.length - 1) {
+      type = 'end';
+    }
+    
+    return { ...task, type };
+  });
+};
 
 interface RoutineManagerProps {
   childId: string;
@@ -31,7 +54,9 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
     if (saved) {
       try {
         const parsed: ChildState = JSON.parse(saved);
-        setTasks(parsed.tasks || DEFAULT_TASKS);
+        // タスクにtypeプロパティがない場合はマイグレーションを実行
+        const migratedTasks = parsed.tasks ? migrateTasksWithType(parsed.tasks) : DEFAULT_TASKS;
+        setTasks(migratedTasks);
         setDepartureTime(parsed.departureTime || '08:00');
         if (parsed.name) setName(parsed.name);
         if (parsed.logs) setLogs(parsed.logs);
