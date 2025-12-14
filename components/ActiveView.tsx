@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Task } from '../types';
 import { IconDisplay } from './IconDisplay';
 import { Check, DoorOpen, AlertTriangle, ThumbsUp, Clock, Sun } from 'lucide-react';
+import { taskCompleteMessages, getRandomMessage } from '../randomMessages';
 
 interface ActiveViewProps {
   tasks: Task[];
@@ -16,6 +17,8 @@ type UrgencyLevel = 'safe' | 'warning' | 'danger';
 export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, onComplete, onBack }) => {
   // 完了したタスクのIDを管理
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
+  // 各タスクの完了時メッセージを保存
+  const [taskMessages, setTaskMessages] = useState<Record<string, string>>({});
   const [currentTime, setCurrentTime] = useState(new Date());
   const [metrics, setMetrics] = useState<{
     level: UrgencyLevel;
@@ -126,6 +129,11 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
   // タスク完了ハンドラー
   const handleCompleteTask = (taskId: string) => {
     setCompletedTaskIds(prev => new Set(prev).add(taskId));
+    // ランダムメッセージを生成して保存
+    setTaskMessages(prev => ({
+      ...prev,
+      [taskId]: getRandomMessage(taskCompleteMessages)
+    }));
   };
 
   // 出発ハンドラー
@@ -268,7 +276,14 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
                       <div className="text-xs text-slate-400">{task.durationMinutes}分</div>
                     </div>
                     {isCompleted ? (
-                      <span className="text-emerald-600 font-black text-sm px-3">✓完了</span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-emerald-600 font-black text-sm">✓完了</span>
+                        {taskMessages[task.id] && (
+                          <span className="text-amber-500 font-bold text-xs animate-bounce">
+                            {taskMessages[task.id]}
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <button
                         onClick={() => handleCompleteTask(task.id)}
