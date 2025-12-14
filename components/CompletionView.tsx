@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Trophy, RotateCcw, Home } from 'lucide-react';
+import { missionCompleteMessages, getRandomMessage } from '../randomMessages';
 
 interface CompletionViewProps {
   onReset: () => void;
 }
 
 export const CompletionView: React.FC<CompletionViewProps> = ({ onReset }) => {
+  // コンポーネントマウント時に1回だけランダムメッセージを生成
+  const randomMessage = useMemo(() => getRandomMessage(missionCompleteMessages), []);
+
   return (
     <div className="flex flex-col items-center justify-center h-full bg-gradient-to-b from-yellow-50 to-orange-100 p-6 text-center">
       
@@ -17,9 +21,11 @@ export const CompletionView: React.FC<CompletionViewProps> = ({ onReset }) => {
         ミッションコンプリート！
       </h1>
       
-      <p className="text-xl text-orange-800/70 font-bold mb-12">
-        今日も一日がんばってね！
-        <br />
+      <p className="text-2xl text-orange-800 font-black mb-4 animate-pulse">
+        {randomMessage}
+      </p>
+      
+      <p className="text-lg text-orange-800/70 font-bold mb-12">
         いってらっしゃい！
       </p>
 
