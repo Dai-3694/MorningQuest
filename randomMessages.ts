@@ -47,6 +47,9 @@ export const missionCompleteMessages = [
 ];
 
 // ランダムに1つ選ぶヘルパー関数
-export const getRandomMessage = (messages: string[]): string => {
+export const getRandomMessage = (messages: readonly string[]): string => {
+  if (messages.length === 0) {
+    return "";
+  }
   return messages[Math.floor(Math.random() * messages.length)];
 };
