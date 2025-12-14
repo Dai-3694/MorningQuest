@@ -20,7 +20,7 @@ export const taskCompleteMessages = [
   "かがやいてる！",
   "ヒーロー！",
   "チャンピオン！",
-];
+] as const;
 
 // ミッションコンプリート時のランダム応援メッセージ
 export const missionCompleteMessages = [
