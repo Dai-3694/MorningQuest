@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { RoutineManager } from './components/RoutineManager';
+import { PWAUpdateNotification } from './components/PWAUpdateNotification';
 import { Maximize, Minimize } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -28,6 +29,9 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-gray-50 relative">
+      
+      {/* PWA Update Notification */}
+      <PWAUpdateNotification />
       
       {/* Global Fullscreen Toggle - Positioned floating at bottom center or top based on preference */}
       <button 
