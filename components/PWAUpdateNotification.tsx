@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { RefreshCw, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 export const PWAUpdateNotification: React.FC = () => {
   const [showUpdated, setShowUpdated] = useState(false);
