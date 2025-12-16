@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { CheckCircle } from 'lucide-react';
 
 export const PWAUpdateNotification: React.FC = () => {
   const [showUpdated, setShowUpdated] = useState(false);
+  const intervalIdRef = useRef<number | null>(null);
   
   const {
     needRefresh: [needRefresh],
@@ -14,7 +15,7 @@ export const PWAUpdateNotification: React.FC = () => {
       console.log('SW registered:', swUrl);
       // 定期的に更新をチェック（1時間ごと）
       if (registration) {
-        setInterval(() => {
+        intervalIdRef.current = window.setInterval(() => {
           registration.update();
         }, 60 * 60 * 1000);
       }
@@ -23,6 +24,15 @@ export const PWAUpdateNotification: React.FC = () => {
       console.error('SW registration error:', error);
     },
   });
+
+  // コンポーネントのアンマウント時にインターバルをクリア
+  useEffect(() => {
+    return () => {
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+      }
+    };
+  }, []);
 
   // 自動更新を実行し、完了後に通知を表示
   useEffect(() => {
