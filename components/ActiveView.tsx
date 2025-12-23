@@ -8,7 +8,7 @@ import { taskCompleteMessages, getRandomMessage } from '../randomMessages';
 interface ActiveViewProps {
   tasks: Task[];
   departureTime: string; // "HH:mm"
-  onComplete: () => void;
+  onComplete: (totalActualSeconds?: number) => void;
   onBack: () => void;
 }
 
@@ -154,6 +154,9 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   // タスク完了ハンドラー
   const handleCompleteTask = (taskId: string) => {
+    // 既に追加されている（完了済み）場合は何もしない
+    if (completedTaskIds.has(taskId)) return;
+
     const now = Date.now();
     const secondsSinceLast = Math.floor((now - lastActionTime) / 1000);
 
@@ -180,12 +183,18 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   // 出発ハンドラー
   const handleDepart = () => {
-    // 実際の合計時間を計算して渡す
-    const totalActualSeconds = Object.values(elapsedSeconds).reduce((sum, sec) => sum + sec, 0);
-    // 元の onComplete は引数なしだが、RoutineManager側で logs を更新する際にこの値を参照させたい
-    // 簡易化のため、RoutineManagerからもこの値を計算できるように localStorage 等で渡すか、
-    // onComplete のシグネチャを変更する
-    (onComplete)(totalActualSeconds);
+    const now = Date.now();
+    const secondsSinceLast = Math.floor((now - lastActionTime) / 1000);
+
+    // 現在アクティブなタスク（出発タスクなど）の時間を最後に加算
+    let finalElapsed = { ...elapsedSeconds };
+    if (activeTaskId) {
+      finalElapsed[activeTaskId] = (finalElapsed[activeTaskId] || 0) + secondsSinceLast;
+    }
+
+    // 全ての実際の合計時間を計算
+    const totalActualSeconds = Object.values(finalElapsed).reduce((sum, sec) => sum + sec, 0);
+    onComplete(totalActualSeconds);
   };
 
   // ビジュアル設定
