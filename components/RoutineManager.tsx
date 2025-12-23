@@ -6,7 +6,8 @@ import { ActiveView } from './ActiveView';
 import { CompletionView } from './CompletionView';
 import { LogView } from './LogView';
 import { StampView } from './StampView';
-import { MissionLog, StampCard } from '../types';
+import { RewardView } from './RewardView';
+import { MissionLog, StampCard, Medal } from '../types';
 
 /**
  * ローカルストレージから読み込んだタスクに type プロパティがない場合、
@@ -18,7 +19,7 @@ const migrateTasksWithType = (tasks: Task[]): Task[] => {
     if (task.type) {
       return task;
     }
-    
+
     // type プロパティがない場合、位置に基づいてデフォルト値を付与
     let type: TaskType = 'flexible';
     if (index === 0) {
@@ -26,7 +27,7 @@ const migrateTasksWithType = (tasks: Task[]): Task[] => {
     } else if (index === arr.length - 1) {
       type = 'end';
     }
-    
+
     return { ...task, type };
   });
 };
@@ -45,7 +46,12 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
   const [tasks, setTasks] = useState<Task[]>(DEFAULT_TASKS);
   const [departureTime, setDepartureTime] = useState<string>('08:00');
   const [logs, setLogs] = useState<MissionLog[]>([]);
-  const [stampCard, setStampCard] = useState<StampCard>({ currentStamps: 0, totalRewards: 0 });
+  const [stampCard, setStampCard] = useState<StampCard>({
+    currentStamps: 0,
+    totalRewards: 0,
+    rank: 0,
+    medals: []
+  });
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load state from local storage
@@ -60,7 +66,14 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
         setDepartureTime(parsed.departureTime || '08:00');
         if (parsed.name) setName(parsed.name);
         if (parsed.logs) setLogs(parsed.logs);
-        if (parsed.stampCard) setStampCard(parsed.stampCard);
+        if (parsed.stampCard) {
+          setStampCard({
+            currentStamps: parsed.stampCard.currentStamps || 0,
+            totalRewards: parsed.stampCard.totalRewards || 0,
+            rank: parsed.stampCard.rank || 0,
+            medals: parsed.stampCard.medals || []
+          });
+        }
       } catch (e) {
         console.error("Failed to load state", e);
       }
@@ -119,7 +132,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
         <ActiveView
           tasks={tasks}
           departureTime={departureTime}
-          onComplete={() => {
+          onComplete={(totalActualSeconds?: number) => {
             // Calculate success (finished before departure time)
             const now = new Date();
             const [deptHour, deptMinute] = departureTime.split(':').map(Number);
@@ -127,32 +140,24 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
             deptDate.setHours(deptHour, deptMinute, 0, 0);
 
             const isSuccess = now <= deptDate;
-            const totalDurationSeconds = tasks.reduce((acc, t) => acc + t.durationMinutes * 60, 0); // Approximate based on plan, ideally track real time
+            const scheduledDurationSeconds = tasks.reduce((acc, t) => acc + t.durationMinutes * 60, 0);
 
             // Update Logs
             const newLog: MissionLog = {
               date: now.toLocaleDateString('sv-SE'),
               completedAt: now.toISOString(),
-              totalDurationSeconds, // Note: In a real app we'd track actual elapsed time
+              totalDurationSeconds: scheduledDurationSeconds,
+              actualDurationSeconds: totalActualSeconds, // 実際の計測時間を保存
               isSuccess
             };
             setLogs(prev => [...prev, newLog]);
 
             // Update Stamps if success
             if (isSuccess) {
-              setStampCard(prev => {
-                const nextStamps = prev.currentStamps + 1;
-                if (nextStamps >= 10) {
-                  return {
-                    currentStamps: 0,
-                    totalRewards: prev.totalRewards + 1
-                  };
-                }
-                return {
-                  ...prev,
-                  currentStamps: nextStamps
-                };
-              });
+              setStampCard(prev => ({
+                ...prev,
+                currentStamps: prev.currentStamps + 1
+              }));
             }
 
             setMode('completed');
@@ -167,7 +172,31 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
 
       {mode === 'completed' && (
         <CompletionView
-          onReset={() => setMode('setup')}
+          onReset={() => {
+            if (stampCard.currentStamps >= 10) {
+              setMode('reward');
+            } else {
+              setMode('setup');
+            }
+          }}
+        />
+      )}
+
+      {mode === 'reward' && (
+        <RewardView
+          childName={name}
+          rank={stampCard.rank}
+          logs={logs}
+          onAccept={(medal) => {
+            setStampCard(prev => ({
+              ...prev,
+              currentStamps: 0,
+              totalRewards: prev.totalRewards + 1,
+              rank: Math.min(prev.rank + 1, 3),
+              medals: [...prev.medals, medal]
+            }));
+            setMode('stamp');
+          }}
         />
       )}
 

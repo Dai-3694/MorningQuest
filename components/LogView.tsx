@@ -12,10 +12,10 @@ interface LogViewProps {
 export const LogView: React.FC<LogViewProps> = ({ logs, onBack, themeColor }) => {
     const sortedLogs = [...logs].sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime());
 
-    // Prepare data for chart (last 7 entries or all if less)
+    // Prepare data for chart (last 14 entries or all if less)
     const chartData = sortedLogs.slice(-14).map(log => ({
         date: new Date(log.date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
-        duration: Math.round(log.totalDurationSeconds / 60),
+        duration: Math.round((log.actualDurationSeconds ?? log.totalDurationSeconds) / 60),
     }));
 
     const colorClass = themeColor === 'rose' ? 'text-rose-600' : 'text-sky-600';
@@ -48,7 +48,7 @@ export const LogView: React.FC<LogViewProps> = ({ logs, onBack, themeColor }) =>
                         <span className="text-sm font-bold text-gray-600 mb-1">平均タイム</span>
                         <span className={`text-3xl font-black ${colorClass}`}>
                             {logs.length > 0
-                                ? Math.round(logs.reduce((acc, cur) => acc + cur.totalDurationSeconds, 0) / logs.length / 60)
+                                ? Math.round(logs.reduce((acc, cur) => acc + (cur.actualDurationSeconds ?? cur.totalDurationSeconds), 0) / logs.length / 60)
                                 : 0}
                             <span className="text-sm ml-1 text-gray-500">分</span>
                         </span>
@@ -115,7 +115,7 @@ export const LogView: React.FC<LogViewProps> = ({ logs, onBack, themeColor }) =>
                                         {log.isSuccess ? 'クリア！' : 'おしい！'}
                                     </span>
                                     <span className="font-mono font-bold text-lg text-gray-700">
-                                        {Math.floor(log.totalDurationSeconds / 60)}
+                                        {Math.floor((log.actualDurationSeconds ?? log.totalDurationSeconds) / 60)}
                                         <span className="text-xs ml-0.5">分</span>
                                     </span>
                                 </div>
