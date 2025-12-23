@@ -17,6 +17,13 @@ type UrgencyLevel = 'safe' | 'warning' | 'danger';
 export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, onComplete, onBack }) => {
   // 完了したタスクのIDを管理
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
+  // 最後にアクション（開始または完了）が発生した時刻
+  const [lastActionTime, setLastActionTime] = useState<number>(Date.now());
+  // 各タスクの確定済み経過秒数
+  const [elapsedSeconds, setElapsedSeconds] = useState<Record<string, number>>({});
+  // リアルタイム表示用の秒数（activeTaskIdの分）
+  const [activeTaskElapsed, setActiveTaskElapsed] = useState<number>(0);
+
   // 各タスクの完了時メッセージを保存
   const [taskMessages, setTaskMessages] = useState<Record<string, string>>({});
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -37,18 +44,30 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
   const departureTask = tasks.find(t => t.type === 'end');
   const flexibleTasks = tasks.filter(t => t.type === 'flexible');
 
+  // 現在取り組んでいる（べき）タスクを順序通りに特定
+  const currentTaskOrder = tasks.filter(t => !completedTaskIds.has(t.id));
+  const activeTaskId = currentTaskOrder.length > 0 ? currentTaskOrder[0].id : null;
+
   // フェーズ判定（wakeUpTaskが存在しない場合は起床フェーズをスキップ）
   const isWakeUpPhase = wakeUpTask ? !completedTaskIds.has(wakeUpTask.id) : false;
   const allFlexibleCompleted = flexibleTasks.every(t => completedTaskIds.has(t.id));
   const canDepart = !isWakeUpPhase && allFlexibleCompleted;
 
-  // 現在時刻の更新
+  // 1秒ごとの更新処理
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date());
+      const now = new Date();
+      setCurrentTime(now);
+
+      // アクティブ（フォーカス）なタスクの現時点での経過時間を計算
+      if (activeTaskId) {
+        const secondsSinceLast = Math.floor((now.getTime() - lastActionTime) / 1000);
+        const accumulated = (elapsedSeconds[activeTaskId] || 0) + secondsSinceLast;
+        setActiveTaskElapsed(accumulated);
+      }
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [activeTaskId, lastActionTime, elapsedSeconds]);
 
   // Request Wake Lock to keep screen on
   useEffect(() => {
@@ -126,10 +145,31 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     calculateMetrics();
   }, [departureTime, tasks, completedTaskIds, currentTime]);
 
+  // 秒を MM:SS 形式に変換
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   // タスク完了ハンドラー
   const handleCompleteTask = (taskId: string) => {
+    const now = Date.now();
+    const secondsSinceLast = Math.floor((now - lastActionTime) / 1000);
+
+    // 今回クリックしたタスクにここまでの時間を加算
+    setElapsedSeconds(prev => ({
+      ...prev,
+      [taskId]: (prev[taskId] || 0) + secondsSinceLast
+    }));
+
+    // 最後のアクションを更新
+    setLastActionTime(now);
+
+    // 完了フラグを立てる
     setCompletedTaskIds(prev => new Set(prev).add(taskId));
-    // ランダムメッセージを生成して保存
+
+    // ランダムメッセージ
     setTaskMessages(prev => ({
       ...prev,
       [taskId]: getRandomMessage(taskCompleteMessages)
@@ -138,7 +178,12 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   // 出発ハンドラー
   const handleDepart = () => {
-    onComplete();
+    // 実際の合計時間を計算して渡す
+    const totalActualSeconds = Object.values(elapsedSeconds).reduce((sum, sec) => (sum as number) + (sec as number), 0);
+    // 元の onComplete は引数なしだが、RoutineManager側で logs を更新する際にこの値を参照させたい
+    // 簡易化のため、RoutineManagerからもこの値を計算できるように localStorage 等で渡すか、
+    // onComplete のシグネチャを変更する
+    (onComplete as any)(totalActualSeconds);
   };
 
   // ビジュアル設定
@@ -222,10 +267,10 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
             <div className="w-32 h-32 rounded-full bg-amber-400 flex items-center justify-center shadow-2xl border-8 border-white">
               <Sun size={64} className="text-white" />
             </div>
-            <h2 className="text-4xl font-black text-slate-800">{wakeUpTask.title}</h2>
-            <p className="text-slate-500 font-bold">目安: {wakeUpTask.durationMinutes}分</p>
+            <h2 className="text-4xl font-black text-slate-800">{wakeUpTask?.title}</h2>
+            <p className="text-slate-500 font-bold">目安: {wakeUpTask?.durationMinutes}分</p>
             <button
-              onClick={() => handleCompleteTask(wakeUpTask.id)}
+              onClick={() => wakeUpTask && handleCompleteTask(wakeUpTask.id)}
               className="px-12 py-5 bg-amber-500 hover:bg-amber-600 text-white text-3xl font-black rounded-3xl shadow-xl active:scale-95 transition-transform ring-4 ring-white/50"
             >
               おきた！
@@ -235,45 +280,69 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
           <>
             {/* 起きる完了表示 */}
             {wakeUpTask && (
-            <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-sm">
-                <Check size={20} />
+              <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-sm">
+                  <Check size={20} />
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-slate-700">{wakeUpTask.title}</div>
+                  <div className="text-xs text-slate-400">
+                    {wakeUpTask.durationMinutes}分
+                    {elapsedSeconds[wakeUpTask.id] !== undefined && (
+                      <span className="ml-2 text-slate-500">(かかった時間: {formatTime(elapsedSeconds[wakeUpTask.id])})</span>
+                    )}
+                  </div>
+                </div>
+                <span className="text-emerald-600 font-black text-sm">完了!</span>
               </div>
-              <div className="flex-1">
-                <div className="font-bold text-slate-700">{wakeUpTask.title}</div>
-                <div className="text-xs text-slate-400">{wakeUpTask.durationMinutes}分</div>
-              </div>
-              <span className="text-emerald-600 font-black text-sm">完了!</span>
-            </div>
             )}
 
             {/* フェーズ2: 自由順タスクリスト */}
             <div className="bg-white/60 rounded-2xl p-3 space-y-2 border border-white/50">
-              <h3 className="text-sm font-bold text-slate-500 px-2">じゆうにできるミッション</h3>
+              <h3 className="text-sm font-bold text-slate-500 px-2">ミッションをおわらせよう！</h3>
               {flexibleTasks.map(task => {
                 const isCompleted = completedTaskIds.has(task.id);
+                const isActive = activeTaskId === task.id;
+                // Plan C: focusタスクならリアルタイム経過時間を、そうでなければ確定済み時間を使用
+                const taskElapsed = isActive ? activeTaskElapsed : (elapsedSeconds[task.id] || 0);
+                const isOverdue = !isCompleted && taskElapsed > task.durationMinutes * 60;
+
                 return (
                   <div
                     key={task.id}
-                    className={`p-3 rounded-xl flex items-center gap-3 transition-all ${
-                      isCompleted 
-                        ? 'bg-emerald-50 border border-emerald-200' 
-                        : 'bg-white border border-slate-200 shadow-sm'
-                    }`}
+                    className={`p-3 rounded-xl flex items-center gap-3 transition-all ${isCompleted
+                      ? 'bg-emerald-50 border border-emerald-200 opacity-60'
+                      : isActive
+                        ? 'bg-white border-2 border-sky-400 shadow-md ring-2 ring-sky-100'
+                        : 'bg-white/40 border border-slate-200 shadow-sm grayscale-[0.5]'
+                      }`}
                   >
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 ${
-                        isCompleted ? 'bg-emerald-500' : ''
-                      }`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 ${isCompleted ? 'bg-emerald-500' : isActive ? 'animate-bounce' : ''
+                        }`}
                       style={!isCompleted ? { backgroundColor: task.color } : {}}
                     >
                       {isCompleted ? <Check size={20} /> : <IconDisplay icon={task.icon} size={20} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`font-bold truncate ${isCompleted ? 'text-emerald-700' : 'text-slate-700'}`}>
-                        {task.title}
+                      <div className="flex items-center gap-2">
+                        <div className={`font-bold truncate ${isCompleted ? 'text-emerald-700' : 'text-slate-700'}`}>
+                          {task.title}
+                        </div>
+                        {isActive && (
+                          <span className="bg-sky-400 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+                            いま！
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-400">{task.durationMinutes}分</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs text-slate-400">{task.durationMinutes}分</div>
+                        {(isActive || isCompleted) && (
+                          <div className={`text-xs font-black ${isOverdue ? 'text-rose-500 animate-pulse' : 'text-slate-500'}`}>
+                            {isCompleted ? '実績:' : 'いま:'} {formatTime(taskElapsed)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {isCompleted ? (
                       <div className="flex flex-col items-end">
@@ -287,7 +356,10 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
                     ) : (
                       <button
                         onClick={() => handleCompleteTask(task.id)}
-                        className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow-sm active:scale-95 transition-transform text-sm"
+                        className={`px-4 py-2 font-bold rounded-xl shadow-sm active:scale-95 transition-all text-sm ${isActive
+                          ? 'bg-sky-500 hover:bg-sky-600 text-white'
+                          : 'bg-white border-2 border-slate-300 text-slate-500 hover:bg-slate-50'
+                          }`}
                       >
                         できた
                       </button>
@@ -299,33 +371,37 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
             {/* フェーズ3: 出発ボタン */}
             {departureTask && (
-            <div className={`p-4 rounded-2xl border-2 ${canDepart ? 'bg-rose-50 border-rose-300' : 'bg-slate-100 border-slate-200'}`}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${canDepart ? 'bg-rose-500 text-white' : 'bg-slate-300 text-slate-500'}`}>
-                  <DoorOpen size={24} />
-                </div>
-                <div>
-                  <div className={`font-black text-lg ${canDepart ? 'text-rose-700' : 'text-slate-400'}`}>
-                    {departureTask.title}
+              <div className={`p-4 rounded-2xl border-2 ${canDepart ? 'bg-rose-50 border-rose-300' : 'bg-slate-100 border-slate-200'}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${canDepart ? 'bg-rose-500 text-white' : 'bg-slate-300 text-slate-500'}`}>
+                    <DoorOpen size={24} />
                   </div>
-                  {!canDepart && (
-                    <div className="text-xs text-slate-400">全部できたら押せるよ！</div>
-                  )}
+                  <div className="flex-1">
+                    <div className={`font-black text-lg ${canDepart ? 'text-rose-700' : 'text-slate-400'}`}>
+                      {departureTask.title}
+                    </div>
+                    {!canDepart && (
+                      <div className="text-xs text-slate-400">ミッションをぜんぶ終わらせよう！</div>
+                    )}
+                    {activeTaskId === departureTask.id && (
+                      <div className="text-xs font-black text-rose-500">
+                        しゅっぱつのじゅんび中: {formatTime(elapsedSeconds[departureTask.id] || 0)}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <button
-                onClick={handleDepart}
-                disabled={!canDepart}
-                className={`w-full py-4 text-2xl font-black rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 ${
-                  canDepart 
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white ring-4 ring-white/50' 
+                <button
+                  onClick={handleDepart}
+                  disabled={!canDepart}
+                  className={`w-full py-4 text-2xl font-black rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 ${canDepart
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white ring-4 ring-white/50'
                     : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                }`}
-              >
-                <span>出発する！</span>
-                <DoorOpen size={28} />
-              </button>
-            </div>
+                    }`}
+                >
+                  <span>出発する！</span>
+                  <DoorOpen size={28} />
+                </button>
+              </div>
             )}
           </>
         )}

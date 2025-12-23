@@ -22,18 +22,29 @@ export interface Task {
   type: TaskType;
 }
 
-export type AppMode = 'setup' | 'active' | 'completed' | 'log' | 'stamp';
+export type AppMode = 'setup' | 'active' | 'completed' | 'log' | 'stamp' | 'reward';
+
+export interface Medal {
+  id: string;
+  title: string;
+  date: string;
+  comment: string;
+  rankAtTime: number;
+}
 
 export interface MissionLog {
   date: string; // YYYY-MM-DD
   completedAt: string; // ISO string
-  totalDurationSeconds: number;
+  totalDurationSeconds: number; // Scheduled duration
+  actualDurationSeconds?: number; // Actual measured duration
   isSuccess: boolean; // Completed before departure time
 }
 
 export interface StampCard {
   currentStamps: number;
   totalRewards: number;
+  rank: number; // 0: ひよこ, 1: うさぎ, 2: ライオン, 3: おうさま
+  medals: Medal[];
 }
 
 export interface ChildState {
