@@ -193,7 +193,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     }
 
     // 全ての実際の合計時間を計算
-    const totalActualSeconds = Object.values(finalElapsed).reduce((sum: number, sec: number) => sum + sec, 0);
+    const totalActualSeconds = Object.values(finalElapsed).reduce((sum, sec) => sum + sec, 0);
     onComplete(totalActualSeconds);
   };
 
