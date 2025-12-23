@@ -181,7 +181,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
   // 出発ハンドラー
   const handleDepart = () => {
     // 実際の合計時間を計算して渡す
-    const totalActualSeconds = Object.values(elapsedSeconds).reduce((sum, sec) => (sum as number) + (sec as number), 0);
+    const totalActualSeconds = Object.values(elapsedSeconds).reduce((sum, sec) => sum + sec, 0);
     // 元の onComplete は引数なしだが、RoutineManager側で logs を更新する際にこの値を参照させたい
     // 簡易化のため、RoutineManagerからもこの値を計算できるように localStorage 等で渡すか、
     // onComplete のシグネチャを変更する
