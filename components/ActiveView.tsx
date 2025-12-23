@@ -154,6 +154,9 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   // タスク完了ハンドラー
   const handleCompleteTask = (taskId: string) => {
+    // 既に追加されている（完了済み）場合は何もしない
+    if (completedTaskIds.has(taskId)) return;
+
     const now = Date.now();
     const secondsSinceLast = Math.floor((now - lastActionTime) / 1000);
 
@@ -168,8 +171,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     // 最後のアクションを更新
     setLastActionTime(now);
 
-    // 完了フラグを立てる（既に追加されている場合は何もしない）
-    if (completedTaskIds.has(taskId)) return;
+    // 完了フラグを立てる
     setCompletedTaskIds(prev => new Set(prev).add(taskId));
 
     // ランダムメッセージ
