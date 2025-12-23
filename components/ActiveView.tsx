@@ -157,11 +157,13 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     const now = Date.now();
     const secondsSinceLast = Math.floor((now - lastActionTime) / 1000);
 
-    // 今回クリックしたタスクにここまでの時間を加算
-    setElapsedSeconds(prev => ({
-      ...prev,
-      [taskId]: (prev[taskId] || 0) + secondsSinceLast
-    }));
+    // 今回アクティブだったタスクにここまでの時間を加算
+    if (activeTaskId) {
+      setElapsedSeconds(prev => ({
+        ...prev,
+        [activeTaskId]: (prev[activeTaskId] || 0) + secondsSinceLast
+      }));
+    }
 
     // 最後のアクションを更新
     setLastActionTime(now);
