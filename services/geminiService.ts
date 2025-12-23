@@ -61,8 +61,8 @@ export const generateRewardComment = async (childName: string, logs: MissionLog[
     const successCount = recentLogs.filter(l => l.isSuccess).length;
 
     // スピード改善の傾向があるかチェック
-    const avgScheduled = recentLogs.reduce((acc, l) => acc + l.totalDurationSeconds, 0) / recentLogs.length;
-    const avgActual = recentLogs.reduce((acc, l) => acc + (l.actualDurationSeconds || l.totalDurationSeconds), 0) / recentLogs.length;
+    const avgScheduled = recentLogs.length > 0 ? recentLogs.reduce((acc, l) => acc + l.totalDurationSeconds, 0) / recentLogs.length : 0;
+    const avgActual = recentLogs.length > 0 ? recentLogs.reduce((acc, l) => acc + (l.actualDurationSeconds || l.totalDurationSeconds), 0) / recentLogs.length : 0;
     const isFaster = avgActual < avgScheduled;
 
     const response = await ai.models.generateContent({
