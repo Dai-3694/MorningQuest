@@ -185,7 +185,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     // 元の onComplete は引数なしだが、RoutineManager側で logs を更新する際にこの値を参照させたい
     // 簡易化のため、RoutineManagerからもこの値を計算できるように localStorage 等で渡すか、
     // onComplete のシグネチャを変更する
-    (onComplete as any)(totalActualSeconds);
+    (onComplete)(totalActualSeconds);
   };
 
   // ビジュアル設定
