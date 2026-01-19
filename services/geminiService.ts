@@ -6,7 +6,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 export const generateSchedule = async (promptText: string): Promise<Task[]> => {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-flash",
       contents: `Create a morning routine schedule for a child based on this request: "${promptText}". 
       Break it down into actionable steps.
       Assign a relevant icon from this list: [sun, toothbrush, shirt, utensils, backpack, door-open, book, gamepad, circle].
@@ -66,7 +66,7 @@ export const generateRewardComment = async (childName: string, logs: MissionLog[
     const isFaster = avgActual < avgScheduled;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-flash",
       contents: `
         あなたは子供を励ます優しいコーチです。
         名前: ${childName}
