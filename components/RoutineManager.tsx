@@ -52,6 +52,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
     rank: 0,
     medals: []
   });
+  const [isBonus, setIsBonus] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load state from local storage
@@ -132,6 +133,8 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
         <ActiveView
           tasks={tasks}
           departureTime={departureTime}
+          isBonus={isBonus}
+          onBonusDetected={() => setIsBonus(true)}
           onComplete={(totalActualSeconds?: number) => {
             // Calculate success (finished before departure time)
             const now = new Date();
@@ -147,16 +150,18 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
               date: now.toLocaleDateString('sv-SE'),
               completedAt: now.toISOString(),
               totalDurationSeconds: scheduledDurationSeconds,
-              actualDurationSeconds: totalActualSeconds, // 実際の計測時間を保存
-              isSuccess
+              actualDurationSeconds: totalActualSeconds,
+              isSuccess,
+              isBonus: isBonus
             };
             setLogs(prev => [...prev, newLog]);
 
-            // Update Stamps if success
+            // Update Stamps if success (bonus = +2, normal = +1)
             if (isSuccess) {
+              const stampsToAdd = isBonus ? 2 : 1;
               setStampCard(prev => ({
                 ...prev,
-                currentStamps: prev.currentStamps + 1
+                currentStamps: prev.currentStamps + stampsToAdd
               }));
             }
 
@@ -164,6 +169,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
           }}
           onBack={() => {
             if (window.confirm('本当にやめますか？')) {
+              setIsBonus(false);
               setMode('setup');
             }
           }}
@@ -172,7 +178,11 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
 
       {mode === 'completed' && (
         <CompletionView
+          isBonus={isBonus}
+          isSuccess={logs.length > 0 ? logs[logs.length - 1].isSuccess : false}
           onReset={() => {
+            const bonusWasActive = isBonus;
+            setIsBonus(false);
             if (stampCard.currentStamps >= 10) {
               setMode('reward');
             } else {

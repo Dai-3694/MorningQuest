@@ -38,6 +38,7 @@ export interface MissionLog {
   totalDurationSeconds: number; // Scheduled duration
   actualDurationSeconds?: number; // Actual measured duration
   isSuccess: boolean; // Completed before departure time
+  isBonus?: boolean; // 早起きボーナスチャンスだったか
 }
 
 export interface StampCard {

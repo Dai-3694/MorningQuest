@@ -1,20 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Task } from '../types';
 import { IconDisplay } from './IconDisplay';
-import { Check, DoorOpen, AlertTriangle, ThumbsUp, Clock, Sun } from 'lucide-react';
+import { Check, DoorOpen, AlertTriangle, ThumbsUp, Clock, Sun, Sparkles, Star, Zap } from 'lucide-react';
 import { taskCompleteMessages, getRandomMessage } from '../randomMessages';
 
 interface ActiveViewProps {
   tasks: Task[];
   departureTime: string; // "HH:mm"
+  isBonus: boolean;
+  onBonusDetected: () => void;
   onComplete: (totalActualSeconds?: number) => void;
   onBack: () => void;
 }
 
 type UrgencyLevel = 'safe' | 'warning' | 'danger';
 
-export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, onComplete, onBack }) => {
+export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, isBonus, onBonusDetected, onComplete, onBack }) => {
   // 完了したタスクのIDを管理
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
   // 最後にアクション（開始または完了）が発生した時刻
@@ -26,6 +28,30 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
   // 各タスクの完了時メッセージを保存
   const [taskMessages, setTaskMessages] = useState<Record<string, string>>({});
+  // 早起きボーナス演出表示中
+  const [showBonusSplash, setShowBonusSplash] = useState(false);
+
+  // ボーナス演出の星スタイルをメモ化（再レンダリングでちらつかないようにする）
+  const splashStarStyles = useMemo(() => {
+    if (!showBonusSplash) return [];
+    return [...Array(24)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 1.5}s`,
+      animationDuration: `${1 + Math.random() * 1.5}s`,
+      size: Math.random() * 16 + 12,
+    }));
+  }, [showBonusSplash]);
+
+  // ボーナス演出の自動非表示（クリーンアップ付き）
+  useEffect(() => {
+    if (showBonusSplash) {
+      const timer = setTimeout(() => {
+        setShowBonusSplash(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showBonusSplash]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [metrics, setMetrics] = useState<{
     level: UrgencyLevel;
@@ -98,20 +124,24 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     };
   }, []);
 
+  // 出発時刻のDate取得ヘルパー（深夜またぎ対応）
+  const getDepartureDate = (now: Date): Date => {
+    const [depH, depM] = departureTime.split(':').map(Number);
+    const departure = new Date(now);
+    departure.setHours(depH, depM, 0, 0);
+
+    // 深夜をまたぐ場合の処理
+    if (departure.getTime() < now.getTime() - 12 * 60 * 60 * 1000) {
+      departure.setDate(departure.getDate() + 1);
+    }
+    return departure;
+  };
+
   // 緊急度メーターの計算
   useEffect(() => {
     const calculateMetrics = () => {
       const now = currentTime;
-
-      // 出発時刻をパース
-      const [depH, depM] = departureTime.split(':').map(Number);
-      const departure = new Date(now);
-      departure.setHours(depH, depM, 0, 0);
-
-      // 深夜をまたぐ場合の処理
-      if (departure.getTime() < now.getTime() - 12 * 60 * 60 * 1000) {
-        departure.setDate(departure.getDate() + 1);
-      }
+      const departure = getDepartureDate(now);
 
       // 出発までの時間（分）
       const msToDeparture = departure.getTime() - now.getTime();
@@ -152,6 +182,17 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // 早起きボーナス判定: 現在時刻が 出発時刻 - (タスク合計時間 + 10分) より前か
+  const checkEarlyBirdBonus = (): boolean => {
+    const now = new Date();
+    const departure = getDepartureDate(now);
+
+    const totalTaskMinutes = tasks.reduce((acc, t) => acc + t.durationMinutes, 0);
+    const bonusThresholdMs = departure.getTime() - (totalTaskMinutes + 10) * 60 * 1000;
+
+    return now.getTime() < bonusThresholdMs;
+  };
+
   // タスク完了ハンドラー
   const handleCompleteTask = (taskId: string) => {
     // 既に追加されている（完了済み）場合は何もしない
@@ -170,6 +211,15 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
 
     // 最後のアクションを更新
     setLastActionTime(now);
+
+    // 「おきた！」（startタスク）を完了した瞬間にボーナス判定
+    const task = tasks.find(t => t.id === taskId);
+    if (task?.type === 'start' && !isBonus) {
+      if (checkEarlyBirdBonus()) {
+        onBonusDetected();
+        setShowBonusSplash(true);
+      }
+    }
 
     // 完了フラグを立てる
     setCompletedTaskIds(prev => new Set(prev).add(taskId));
@@ -225,8 +275,55 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, on
   return (
     <div className={`flex flex-col h-full w-full ${visualConfig.bg} transition-colors duration-500 relative overflow-hidden`}>
 
+      {/* 早起きボーナスチャンス発動演出 */}
+      {showBonusSplash && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-amber-400 via-yellow-300 to-orange-400 animate-pulse">
+          {/* 背景キラキラ */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {splashStarStyles.map((star, i) => (
+              <div
+                key={i}
+                className="absolute animate-bounce"
+                style={{
+                  left: star.left,
+                  top: star.top,
+                  animationDelay: star.animationDelay,
+                  animationDuration: star.animationDuration,
+                }}
+              >
+                <Star size={star.size} fill="#fff" className="text-white opacity-60 drop-shadow-lg" />
+              </div>
+            ))}
+          </div>
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <div className="w-28 h-28 rounded-full bg-white/30 flex items-center justify-center shadow-2xl border-4 border-white/50 backdrop-blur-sm">
+              <Zap size={64} className="text-white drop-shadow-lg" />
+            </div>
+            <h1 className="text-4xl font-black text-white drop-shadow-lg tracking-wide">
+              早起きボーナス！
+            </h1>
+            <p className="text-xl font-bold text-white/90 drop-shadow">
+              スタンプ 2倍 チャンス！
+            </p>
+            <div className="flex gap-2 mt-2">
+              <Star size={32} fill="#fff" className="text-white animate-spin" style={{ animationDuration: '3s' }} />
+              <Star size={40} fill="#fff" className="text-white animate-spin" style={{ animationDuration: '2s' }} />
+              <Star size={32} fill="#fff" className="text-white animate-spin" style={{ animationDuration: '3s' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ヘッダー / ステータスバー */}
       <div className="bg-white/90 backdrop-blur-md border-b border-black/10 p-3 flex flex-col gap-2 shadow-sm z-10">
+        {/* 早起きボーナスチャンス中バナー */}
+        {isBonus && !showBonusSplash && (
+          <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 text-white font-black text-sm py-1.5 px-4 rounded-full shadow-md animate-pulse mb-1">
+            <Zap size={16} className="drop-shadow" />
+            <span>早起きボーナスチャンス！ スタンプ2倍！</span>
+            <Zap size={16} className="drop-shadow" />
+          </div>
+        )}
         <div className="flex justify-between items-center">
           <div className={`flex items-center gap-2 font-black text-lg ${visualConfig.text}`}>
             {visualConfig.icon}
