@@ -180,6 +180,8 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
         <CompletionView
           isBonus={isBonus}
           isSuccess={logs.length > 0 ? logs[logs.length - 1].isSuccess : false}
+          currentStamps={stampCard.currentStamps}
+          totalSlots={10}
           onReset={() => {
             const bonusWasActive = isBonus;
             setIsBonus(false);

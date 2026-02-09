@@ -1,16 +1,20 @@
 import React, { useMemo } from 'react';
-import { Trophy, RotateCcw, Home, Zap, Star } from 'lucide-react';
+import { Trophy, Home, Zap, Star, Stamp } from 'lucide-react';
 import { missionCompleteMessages, getRandomMessage } from '../randomMessages';
 
 interface CompletionViewProps {
   isBonus: boolean;
   isSuccess: boolean;
+  currentStamps: number;
+  totalSlots: number;
   onReset: () => void;
 }
 
-export const CompletionView: React.FC<CompletionViewProps> = ({ isBonus, isSuccess, onReset }) => {
+export const CompletionView: React.FC<CompletionViewProps> = ({ isBonus, isSuccess, currentStamps, totalSlots, onReset }) => {
   // コンポーネントマウント時に1回だけランダムメッセージを生成
   const randomMessage = useMemo(() => getRandomMessage(missionCompleteMessages), []);
+
+  const stampsEarned = isSuccess ? (isBonus ? 2 : 1) : 0;
 
   return (
     <div className={`flex flex-col items-center justify-center h-full p-6 text-center ${isBonus && isSuccess ? 'bg-gradient-to-b from-amber-100 via-yellow-50 to-orange-100' : 'bg-gradient-to-b from-yellow-50 to-orange-100'}`}>
@@ -41,10 +45,58 @@ export const CompletionView: React.FC<CompletionViewProps> = ({ isBonus, isSucce
       <p className="text-2xl text-orange-800 font-black mb-4 animate-pulse">
         {randomMessage}
       </p>
+
+      {/* スタンプ獲得表示 - 時間内成功時 */}
+      {isSuccess && !isBonus && (
+        <div className="mb-4 flex items-center gap-3 bg-gradient-to-r from-orange-400 to-amber-400 text-white font-black text-lg py-3 px-6 rounded-2xl shadow-lg animate-bounce">
+          <Stamp size={24} className="drop-shadow" />
+          <span>スタンプ 1個ゲット！</span>
+          <Star size={20} fill="currentColor" className="drop-shadow" />
+        </div>
+      )}
+
+      {/* スタンプ進捗ミニカード */}
+      {isSuccess && (
+        <div className="mb-6 bg-white/80 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-md border border-amber-200 flex items-center gap-3">
+          <div className="flex gap-1">
+            {Array.from({ length: totalSlots }).map((_, idx) => (
+              <div key={idx} className="relative">
+                <Star
+                  size={20}
+                  fill={idx < currentStamps ? '#f59e0b' : 'none'}
+                  className={`transition-all duration-300 ${
+                    idx < currentStamps
+                      ? 'text-amber-500 drop-shadow-sm'
+                      : 'text-gray-300'
+                  } ${
+                    idx >= currentStamps - stampsEarned && idx < currentStamps
+                      ? 'animate-bounce'
+                      : ''
+                  }`}
+                  style={
+                    idx >= currentStamps - stampsEarned && idx < currentStamps
+                      ? { animationDelay: `${(idx - (currentStamps - stampsEarned)) * 0.15}s` }
+                      : {}
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <span className="text-sm font-black text-amber-700">
+            {currentStamps}/{totalSlots}
+          </span>
+        </div>
+      )}
       
       {isBonus && !isSuccess && (
         <p className="text-sm text-orange-600/70 font-bold mb-2">
           ボーナスチャンスだったけど、次はきっと間に合う！
+        </p>
+      )}
+
+      {!isSuccess && (
+        <p className="text-sm text-orange-600/70 font-bold mb-2">
+          時間切れでスタンプはもらえなかった…次はがんばろう！
         </p>
       )}
 
