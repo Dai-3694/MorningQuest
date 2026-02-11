@@ -44,7 +44,7 @@ export interface MissionLog {
 export interface StampCard {
   currentStamps: number;
   totalRewards: number;
-  rank: number; // 0: ひよこ, 1: うさぎ, 2: ライオン, 3: おうさま
+  rank: number; // 0〜34: グレード(動物)×クラス(二つ名)の組み合わせ（詳細は rankData.ts 参照）
   medals: Medal[];
 }
 

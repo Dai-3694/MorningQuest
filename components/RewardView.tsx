@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Medal, MissionLog } from '../types';
-import { Trophy, Star, Feather, Crown, Gift, ArrowRight } from 'lucide-react';
+import { Star, Gift, ArrowRight, ArrowUp } from 'lucide-react';
 import { generateRewardComment } from '../services/geminiService';
+import { getGrade, getRankClass, getRankTitle, isGradeUp, isMaxRank } from '../rankData';
 
 interface RewardViewProps {
     childName: string;
@@ -14,12 +15,12 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
     const [comment, setComment] = useState<string>('メッセージを作成中...');
     const [showContent, setShowContent] = useState(false);
 
-    const rankInfo = [
-        { title: 'ひよこポエム級', icon: <Feather size={48} />, color: 'text-yellow-500', bg: 'bg-yellow-50' },
-        { title: 'うさぎジャンプ級', icon: <Star size={48} />, color: 'text-sky-500', bg: 'bg-sky-50' },
-        { title: 'ライオンパワー級', icon: <Trophy size={48} />, color: 'text-orange-500', bg: 'bg-orange-50' },
-        { title: 'おうさまマスター級', icon: <Crown size={48} />, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    ][rank] || { title: 'すごい！', icon: <Star size={48} />, color: 'text-rose-500', bg: 'bg-rose-50' };
+    const grade = getGrade(rank);
+    const rankClass = getRankClass(rank);
+    const GradeIcon = grade.icon;
+    const title = getRankTitle(rank);
+    const gradeUp = isGradeUp(rank);
+    const maxRank = isMaxRank(rank);
 
     useEffect(() => {
         const fetchComment = async () => {
@@ -33,7 +34,7 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
     const handleGotIt = () => {
         const newMedal: Medal = {
             id: `medal-${Date.now()}`,
-            title: rankInfo.title,
+            title: title,
             date: new Date().toLocaleDateString('ja-JP'),
             comment: comment,
             rankAtTime: rank
@@ -43,7 +44,7 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-white overflow-y-auto">
-            {/* Celebration Background Animation (Simplified) */}
+            {/* Celebration Background Animation */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {[...Array(20)].map((_, i) => (
                     <div
@@ -53,7 +54,7 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
                             left: `${Math.random() * 100}%`,
                             top: `${Math.random() * 100}%`,
                             animationDelay: `${Math.random() * 2}s`,
-                            color: ['#fbbf24', '#38bdf8', '#f87171', '#a78bfa'][i % 4]
+                            color: ['#fbbf24', '#38bdf8', '#f87171', '#a78bfa', '#34d399', '#f472b6'][i % 6]
                         }}
                     >
                         <Star size={Math.random() * 20 + 20} fill="currentColor" />
@@ -62,9 +63,25 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
             </div>
 
             <div className={`w-full max-w-md ${showContent ? 'animate-in fade-in zoom-in duration-500' : 'opacity-0'} flex flex-col items-center text-center space-y-8 z-10`}>
+                {/* グレードアップ時の特別バナー */}
+                {gradeUp && (
+                    <div className="flex items-center gap-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 text-white font-black text-sm py-2 px-5 rounded-full shadow-lg animate-bounce">
+                        <ArrowUp size={16} />
+                        <span>グレードアップ！ {grade.emoji} {grade.name}に進化！</span>
+                        <ArrowUp size={16} />
+                    </div>
+                )}
+
+                {/* MAX到達時の特別バナー */}
+                {maxRank && (
+                    <div className="flex items-center gap-2 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 text-white font-black text-sm py-2 px-5 rounded-full shadow-lg animate-pulse">
+                        <span>🎊 伝説の称号に到達！ 🎊</span>
+                    </div>
+                )}
+
                 <div className="relative">
-                    <div className={`w-32 h-32 rounded-full ${rankInfo.bg} flex items-center justify-center shadow-2xl border-4 border-white ring-4 ring-offset-2 ring-amber-400 animate-pulse`}>
-                        {rankInfo.icon}
+                    <div className={`w-32 h-32 rounded-full ${grade.bg} flex items-center justify-center shadow-2xl border-4 border-white ring-4 ring-offset-2 ${grade.ringColor} animate-pulse`}>
+                        <GradeIcon size={48} className={grade.stampColor} />
                     </div>
                     <div className="absolute -bottom-2 -right-2 bg-rose-500 text-white p-2 rounded-full shadow-lg">
                         <Gift size={24} />
@@ -73,9 +90,15 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
 
                 <div className="space-y-2">
                     <h2 className="text-3xl font-black text-slate-800">10回達成！</h2>
-                    <p className={`text-xl font-bold ${rankInfo.color} flex items-center justify-center gap-2`}>
-                        ランクアップ：{rankInfo.title}
+                    <p className={`text-xl font-bold ${grade.stampColor} flex items-center justify-center gap-2`}>
+                        ランクアップ：{title}
                     </p>
+                    {/* ★表示 */}
+                    <div className="flex items-center justify-center gap-1">
+                        {Array.from({ length: rankClass.stars }).map((_, i) => (
+                            <Star key={i} size={16} fill="currentColor" className="text-amber-400" />
+                        ))}
+                    </div>
                 </div>
 
                 <div className="bg-amber-50 rounded-3xl p-6 border-2 border-amber-200 shadow-inner relative mt-6">

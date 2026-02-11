@@ -8,6 +8,7 @@ import { LogView } from './LogView';
 import { StampView } from './StampView';
 import { RewardView } from './RewardView';
 import { MissionLog, StampCard, Medal } from '../types';
+import { MAX_RANK } from '../rankData';
 
 /**
  * ローカルストレージから読み込んだタスクに type プロパティがない場合、
@@ -204,7 +205,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
               ...prev,
               currentStamps: 0,
               totalRewards: prev.totalRewards + 1,
-              rank: Math.min(prev.rank + 1, 3),
+              rank: Math.min(prev.rank + 1, MAX_RANK),
               medals: [...prev.medals, medal]
             }));
             setMode('stamp');

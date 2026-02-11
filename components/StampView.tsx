@@ -1,6 +1,7 @@
 import React from 'react';
 import { StampCard } from '../types';
-import { ArrowLeft, Star, Gift, Feather, Crown, Trophy, Medal as MedalIcon } from 'lucide-react';
+import { ArrowLeft, Star, Gift, Medal as MedalIcon } from 'lucide-react';
+import { getGrade, getRankClass, getRankTitle, getRankTitleShort, GRADES, CLASSES, getGradeIndex, getClassIndex, isMaxRank, TOTAL_RANKS } from '../rankData';
 
 interface StampViewProps {
     stampCard: StampCard;
@@ -12,18 +13,17 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
     const totalSlots = 10;
     const currentStamps = stampCard.currentStamps;
 
-    const rankThemes = [
-        { title: 'ひよこポエム級', icon: <Feather size={20} />, cardColor: 'bg-yellow-400', stampColor: 'text-yellow-500', bg: 'bg-yellow-50' },
-        { title: 'うさぎジャンプ級', icon: <Star size={20} />, cardColor: 'bg-sky-400', stampColor: 'text-sky-500', bg: 'bg-sky-50' },
-        { title: 'ライオンパワー級', icon: <Trophy size={20} />, cardColor: 'bg-orange-400', stampColor: 'text-orange-500', bg: 'bg-orange-50' },
-        { title: 'おうさまマスター級', icon: <Crown size={20} />, cardColor: 'bg-indigo-600', stampColor: 'text-indigo-600', bg: 'bg-indigo-50' },
-    ];
-
-    const currentTheme = rankThemes[stampCard.rank] || rankThemes[0];
+    const grade = getGrade(stampCard.rank);
+    const rankClass = getRankClass(stampCard.rank);
+    const GradeIcon = grade.icon;
 
     const colorClass = themeColor === 'rose' ? 'text-rose-600' : 'text-sky-600';
     const bgClass = themeColor === 'rose' ? 'bg-rose-50' : 'bg-sky-50';
     const buttonClass = themeColor === 'rose' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-sky-500 hover:bg-sky-600';
+
+    // ランクの進捗計算
+    const currentGradeIdx = getGradeIndex(stampCard.rank);
+    const currentClassIdx = getClassIndex(stampCard.rank);
 
     return (
         <div className={`flex-1 flex flex-col h-full ${bgClass} overflow-y-auto pb-10`}>
@@ -40,14 +40,14 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
             <div className="flex-1 p-6 flex flex-col items-center">
 
                 {/* Rank & Reward Summary */}
-                <div className="mb-8 flex gap-3 w-full max-w-sm">
+                <div className="mb-4 flex gap-3 w-full max-w-sm">
                     <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${currentTheme.bg}`}>
-                            <div className={currentTheme.stampColor}>{currentTheme.icon}</div>
+                        <div className={`p-2 rounded-full ${grade.bg}`}>
+                            <div className={grade.stampColor}><GradeIcon size={20} /></div>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">現在のランク</span>
-                            <span className={`text-sm font-black text-slate-700`}>{currentTheme.title}</span>
+                            <span className={`text-sm font-black text-slate-700`}>{getRankTitleShort(stampCard.rank)}</span>
                         </div>
                     </div>
                     <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm flex items-center gap-3">
@@ -61,9 +61,61 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
                     </div>
                 </div>
 
+                {/* Rank Progress - グレード & クラスの進捗表示 */}
+                <div className="mb-8 w-full max-w-sm bg-white rounded-2xl shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">ランクの旅</span>
+                        <span className="text-xs font-bold text-gray-400">
+                            {stampCard.rank + 1} / {TOTAL_RANKS}
+                        </span>
+                    </div>
+
+                    {/* グレード進捗（動物アイコン並び） */}
+                    <div className="flex items-center justify-between mb-3">
+                        {GRADES.map((g, idx) => {
+                            const Icon = g.icon;
+                            const reached = idx <= currentGradeIdx;
+                            return (
+                                <div key={idx} className="flex flex-col items-center gap-1">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                        reached ? g.bg + ' ' + g.stampColor : 'bg-gray-100 text-gray-300'
+                                    } ${idx === currentGradeIdx ? 'ring-2 ring-offset-1 ' + g.ringColor : ''}`}>
+                                        <Icon size={16} />
+                                    </div>
+                                    <span className={`text-[9px] font-bold ${reached ? 'text-gray-600' : 'text-gray-300'}`}>
+                                        {g.emoji}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* クラス進捗（★の数） */}
+                    <div className="flex items-center gap-1 justify-center">
+                        {CLASSES.map((cls, idx) => (
+                            <div key={idx} className="flex flex-col items-center gap-0.5">
+                                <Star
+                                    size={18}
+                                    fill={idx <= currentClassIdx ? 'currentColor' : 'none'}
+                                    className={idx <= currentClassIdx ? grade.stampColor : 'text-gray-200'}
+                                />
+                                <span className={`text-[8px] font-bold ${idx <= currentClassIdx ? 'text-gray-500' : 'text-gray-300'}`}>
+                                    {cls.name}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {isMaxRank(stampCard.rank) && (
+                        <div className="mt-3 text-center text-xs font-black text-amber-600 bg-amber-50 py-1 rounded-full">
+                            🎊 全称号コンプリート！伝説のおうさま！ 🎊
+                        </div>
+                    )}
+                </div>
+
                 {/* Stamp Card */}
                 <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-sm flex flex-col relative overflow-hidden mb-12">
-                    <div className={`absolute top-0 left-0 w-full h-4 ${currentTheme.cardColor}`} />
+                    <div className={`absolute top-0 left-0 w-full h-4 ${grade.cardColor}`} />
 
                     <h3 className="text-center font-bold text-gray-700 mb-6 mt-2 text-lg">
                         あさのミッション・スタンプ
@@ -79,7 +131,7 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
                                     key={idx}
                                     className={`
                                         aspect-square relative rounded-xl border-2 border-dashed flex items-center justify-center
-                                        ${isStamped ? (currentTheme.bg + ' border-transparent') : 'border-gray-100 bg-gray-50/50'}
+                                        ${isStamped ? (grade.bg + ' border-transparent') : 'border-gray-100 bg-gray-50/50'}
                                     `}
                                 >
                                     {isStamped ? (
@@ -87,7 +139,7 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
                                             <Star
                                                 size={isLast ? 28 : 24}
                                                 fill="currentColor"
-                                                className={`${currentTheme.stampColor} drop-shadow-sm`}
+                                                className={`${grade.stampColor} drop-shadow-sm`}
                                             />
                                         </div>
                                     ) : (
@@ -105,7 +157,10 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
                     </div>
 
                     <div className="mt-6 text-center text-xs text-gray-400 font-bold">
-                        あと {totalSlots - currentStamps} 個でランクアップ！
+                        {isMaxRank(stampCard.rank)
+                            ? `あと ${totalSlots - currentStamps} 個でごほうび！`
+                            : `あと ${totalSlots - currentStamps} 個でランクアップ！`
+                        }
                     </div>
                 </div>
 
@@ -122,24 +177,28 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {stampCard.medals.slice().reverse().map((medal) => (
-                                <div key={medal.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4">
-                                    <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ${rankThemes[medal.rankAtTime]?.bg || 'bg-gray-50'}`}>
-                                        <div className={rankThemes[medal.rankAtTime]?.stampColor || 'text-gray-400'}>
-                                            {rankThemes[medal.rankAtTime]?.icon || <Star size={24} />}
+                            {stampCard.medals.slice().reverse().map((medal) => {
+                                const medalGrade = getGrade(medal.rankAtTime);
+                                const MedalGradeIcon = medalGrade.icon;
+                                return (
+                                    <div key={medal.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4">
+                                        <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ${medalGrade.bg}`}>
+                                            <div className={medalGrade.stampColor}>
+                                                <MedalGradeIcon size={20} />
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 space-y-1">
+                                            <div className="flex justify-between items-start">
+                                                <h4 className="font-black text-slate-700 text-sm">{medal.title}</h4>
+                                                <span className="text-[10px] font-bold text-gray-400">{medal.date}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
+                                                "{medal.comment}"
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="flex-1 space-y-1">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="font-black text-slate-700 text-sm">{medal.title}</h4>
-                                            <span className="text-[10px] font-bold text-gray-400">{medal.date}</span>
-                                        </div>
-                                        <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
-                                            "{medal.comment}"
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
