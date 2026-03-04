@@ -77,15 +77,15 @@ export const DEFAULT_TASKS: Task[] = [
 ];
 
 export const DEFAULT_NIGHT_TASKS: Task[] = [
-  { id: 'n1', title: 'ただいま！', durationMinutes: 5, icon: TaskIcon.DOOR_OPEN, color: '#fb923c', type: 'start' }, // orange-400 - 固定（最初）
-  { id: 'n2', title: 'プリントを出す', durationMinutes: 5, icon: TaskIcon.PENCIL, color: '#facc15', type: 'flexible' }, // yellow-400
-  { id: 'n3', title: 'お箸・コップを出す', durationMinutes: 5, icon: TaskIcon.UTENSILS, color: '#f87171', type: 'flexible' }, // red-400
-  { id: 'n4', title: '宿題をする', durationMinutes: 20, icon: TaskIcon.BOOK, color: '#60a5fa', type: 'flexible' }, // blue-400
-  { id: 'n5', title: 'お風呂に入る', durationMinutes: 20, icon: TaskIcon.BATH, color: '#34d399', type: 'flexible' }, // emerald-400
-  { id: 'n6', title: '晩ごはん', durationMinutes: 20, icon: TaskIcon.UTENSILS, color: '#f97316', type: 'flexible' }, // orange-500
-  { id: 'n7', title: 'おへやの片付け', durationMinutes: 10, icon: TaskIcon.BOX, color: '#a78bfa', type: 'flexible' }, // violet-400
-  { id: 'n8', title: '明日の準備', durationMinutes: 10, icon: TaskIcon.BACKPACK, color: '#38bdf8', type: 'flexible' }, // sky-400
-  { id: 'n9', title: '歯磨き', durationMinutes: 5, icon: TaskIcon.TOOTHBRUSH, color: '#818cf8', type: 'flexible' }, // indigo-400
-  { id: 'n10', title: 'トイレ', durationMinutes: 5, icon: TaskIcon.DEFAULT, color: '#94a3b8', type: 'flexible' }, // slate-400
+  { id: 'n1', title: 'ただいま！', durationMinutes: 0, icon: TaskIcon.DOOR_OPEN, color: '#fb923c', type: 'start' }, // orange-400 - 固定（最初）
+  { id: 'n2', title: 'プリントを出す', durationMinutes: 0, icon: TaskIcon.PENCIL, color: '#facc15', type: 'flexible' }, // yellow-400
+  { id: 'n3', title: 'お箸・コップを出す', durationMinutes: 0, icon: TaskIcon.UTENSILS, color: '#f87171', type: 'flexible' }, // red-400
+  { id: 'n4', title: '宿題をする', durationMinutes: 0, icon: TaskIcon.BOOK, color: '#60a5fa', type: 'flexible' }, // blue-400
+  { id: 'n5', title: 'お風呂に入る', durationMinutes: 0, icon: TaskIcon.BATH, color: '#34d399', type: 'flexible' }, // emerald-400
+  { id: 'n6', title: '晩ごはん', durationMinutes: 0, icon: TaskIcon.UTENSILS, color: '#f97316', type: 'flexible' }, // orange-500
+  { id: 'n7', title: 'おへやの片付け', durationMinutes: 0, icon: TaskIcon.BOX, color: '#a78bfa', type: 'flexible' }, // violet-400
+  { id: 'n8', title: '明日の準備', durationMinutes: 0, icon: TaskIcon.BACKPACK, color: '#38bdf8', type: 'flexible' }, // sky-400
+  { id: 'n9', title: '歯磨き', durationMinutes: 0, icon: TaskIcon.TOOTHBRUSH, color: '#818cf8', type: 'flexible' }, // indigo-400
+  { id: 'n10', title: 'トイレ', durationMinutes: 0, icon: TaskIcon.DEFAULT, color: '#94a3b8', type: 'flexible' }, // slate-400
   { id: 'n11', title: 'おやすみ！', durationMinutes: 0, icon: TaskIcon.MOON, color: '#6366f1', type: 'end' }, // indigo-500 - 固定（最後）
 ];

@@ -37,6 +37,7 @@ interface RoutineManagerProps {
 
 export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initialName, themeColor, missionMode }) => {
   const storageKey = `mq_state_${childId}`;
+  const isNight = missionMode === 'night';
 
   const [mode, setMode] = useState<AppMode>('setup');
   const [name, setName] = useState<string>(initialName);
@@ -110,117 +111,77 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
     setIsBonus(false);
   }, [missionMode]);
 
+  // --- 朝/夜で切り替わる変数をここで一元定義 ---
+  const currentTasks = isNight ? nightTasks : tasks;
+  const setCurrentTasks = isNight ? setNightTasks : setTasks;
+  const currentTime = isNight ? bedTime : departureTime;
+  const setCurrentTime = isNight ? setBedTime : setDepartureTime;
+
   const borderClass = themeColor === 'rose' ? 'border-rose-200' : 'border-sky-200';
-  const bgClass = themeColor === 'rose' ? 'bg-rose-50' : 'bg-sky-50';
+  const bgClass = isNight ? '' : (themeColor === 'rose' ? 'bg-rose-50' : 'bg-sky-50');
+
+  // ミッション完了時の共通処理
+  const handleMissionComplete = (totalActualSeconds?: number) => {
+    const now = new Date();
+    const scheduledDurationSeconds = currentTasks.reduce((acc, t) => acc + t.durationMinutes * 60, 0);
+
+    let isSuccess = true;
+    if (!isNight) {
+      const [deptHour, deptMinute] = departureTime.split(':').map(Number);
+      const deptDate = new Date();
+      deptDate.setHours(deptHour, deptMinute, 0, 0);
+      isSuccess = now <= deptDate;
+    }
+
+    const newLog: MissionLog = {
+      date: now.toLocaleDateString('sv-SE'),
+      completedAt: now.toISOString(),
+      totalDurationSeconds: scheduledDurationSeconds,
+      actualDurationSeconds: totalActualSeconds,
+      isSuccess,
+      isBonus: isNight ? false : isBonus,
+      missionMode,
+    };
+    setLogs(prev => [...prev, newLog]);
+
+    if (isSuccess) {
+      const stampsToAdd = (!isNight && isBonus) ? 2 : 1;
+      setStampCard(prev => ({
+        ...prev,
+        currentStamps: prev.currentStamps + stampsToAdd,
+      }));
+    }
+
+    setMode('completed');
+  };
+
+  // ランクアップ後の共通処理
+  const handleRewardAccept = (medal: Medal) => {
+    setStampCard(prev => ({
+      ...prev,
+      currentStamps: 0,
+      totalRewards: prev.totalRewards + 1,
+      rank: Math.min(prev.rank + 1, MAX_RANK),
+      medals: [...prev.medals, medal],
+    }));
+    setMode('stamp');
+  };
+
+  // 完了後の画面遷移
+  const handleCompletionReset = () => {
+    setIsBonus(false);
+    if (stampCard.currentStamps >= TOTAL_STAMP_SLOTS) {
+      setMode('reward');
+    } else {
+      setMode('setup');
+    }
+  };
 
   if (!isLoaded) return <div className="flex-1 bg-white animate-pulse" />;
 
-  // --- 夜モードのビュー ---
-  if (missionMode === 'night') {
-    return (
-      <div className={`flex-1 flex flex-col relative overflow-hidden border-r-4 last:border-r-0 ${borderClass}`}>
-        {/* プレイヤー名ラベル */}
-        <div className={`absolute top-0 left-0 z-30 px-4 py-1 rounded-br-xl font-bold text-white text-sm shadow-md ${themeColor === 'rose' ? 'bg-rose-400' : 'bg-sky-400'}`}>
-          {name}
-        </div>
-
-        {mode === 'setup' && (
-          <SetupView
-            name={name}
-            setName={setName}
-            tasks={nightTasks}
-            setTasks={setNightTasks}
-            departureTime={bedTime}
-            setDepartureTime={setBedTime}
-            onStart={() => setMode('active')}
-            onLog={() => setMode('log')}
-            onStamp={() => setMode('stamp')}
-            themeColor={themeColor}
-            missionMode="night"
-          />
-        )}
-
-        {mode === 'active' && (
-          <NightActiveView
-            tasks={nightTasks}
-            bedTime={bedTime}
-            onComplete={() => {
-              const now = new Date();
-              const scheduledDurationSeconds = nightTasks.reduce((acc, t) => acc + t.durationMinutes * 60, 0);
-              const newLog: MissionLog = {
-                date: now.toLocaleDateString('sv-SE'),
-                completedAt: now.toISOString(),
-                totalDurationSeconds: scheduledDurationSeconds,
-                isSuccess: true,
-                missionMode: 'night',
-              };
-              setLogs(prev => [...prev, newLog]);
-              setStampCard(prev => ({
-                ...prev,
-                currentStamps: prev.currentStamps + 1,
-              }));
-              setMode('completed');
-            }}
-            onBack={() => setMode('setup')}
-          />
-        )}
-
-        {mode === 'completed' && (
-          <NightCompletionView
-            currentStamps={stampCard.currentStamps}
-            totalSlots={TOTAL_STAMP_SLOTS}
-            onReset={() => {
-              if (stampCard.currentStamps >= TOTAL_STAMP_SLOTS) {
-                setMode('reward');
-              } else {
-                setMode('setup');
-              }
-            }}
-          />
-        )}
-
-        {mode === 'reward' && (
-          <RewardView
-            childName={name}
-            rank={stampCard.rank}
-            logs={logs}
-            onAccept={(medal) => {
-              setStampCard(prev => ({
-                ...prev,
-                currentStamps: 0,
-                totalRewards: prev.totalRewards + 1,
-                rank: Math.min(prev.rank + 1, MAX_RANK),
-                medals: [...prev.medals, medal]
-              }));
-              setMode('stamp');
-            }}
-          />
-        )}
-
-        {mode === 'log' && (
-          <LogView
-            logs={logs}
-            onBack={() => setMode('setup')}
-            themeColor={themeColor}
-          />
-        )}
-
-        {mode === 'stamp' && (
-          <StampView
-            stampCard={stampCard}
-            totalSlots={TOTAL_STAMP_SLOTS}
-            onBack={() => setMode('setup')}
-            themeColor={themeColor}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // --- 朝モードのビュー（従来通り） ---
   return (
     <div className={`flex-1 flex flex-col relative overflow-hidden border-r-4 last:border-r-0 ${borderClass} ${bgClass}`}>
-      {/* Child Header Label */}
+      {/* プレイヤー名ラベル */}
       <div className={`absolute top-0 left-0 z-30 px-4 py-1 rounded-br-xl font-bold text-white text-sm shadow-md ${themeColor === 'rose' ? 'bg-rose-400' : 'bg-sky-400'}`}>
         {name}
       </div>
@@ -229,76 +190,59 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
         <SetupView
           name={name}
           setName={setName}
-          tasks={tasks}
-          setTasks={setTasks}
-          departureTime={departureTime}
-          setDepartureTime={setDepartureTime}
+          tasks={currentTasks}
+          setTasks={setCurrentTasks}
+          departureTime={currentTime}
+          setDepartureTime={setCurrentTime}
           onStart={() => setMode('active')}
           onLog={() => setMode('log')}
           onStamp={() => setMode('stamp')}
           themeColor={themeColor}
-          missionMode="morning"
+          missionMode={missionMode}
         />
       )}
 
       {mode === 'active' && (
-        <ActiveView
-          tasks={tasks}
-          departureTime={departureTime}
-          isBonus={isBonus}
-          onBonusDetected={() => setIsBonus(true)}
-          onComplete={(totalActualSeconds?: number) => {
-            const now = new Date();
-            const [deptHour, deptMinute] = departureTime.split(':').map(Number);
-            const deptDate = new Date();
-            deptDate.setHours(deptHour, deptMinute, 0, 0);
-            const isSuccess = now <= deptDate;
-            const scheduledDurationSeconds = tasks.reduce((acc, t) => acc + t.durationMinutes * 60, 0);
-
-            const newLog: MissionLog = {
-              date: now.toLocaleDateString('sv-SE'),
-              completedAt: now.toISOString(),
-              totalDurationSeconds: scheduledDurationSeconds,
-              actualDurationSeconds: totalActualSeconds,
-              isSuccess,
-              isBonus: isBonus,
-              missionMode: 'morning',
-            };
-            setLogs(prev => [...prev, newLog]);
-
-            if (isSuccess) {
-              const stampsToAdd = isBonus ? 2 : 1;
-              setStampCard(prev => ({
-                ...prev,
-                currentStamps: prev.currentStamps + stampsToAdd
-              }));
-            }
-            setMode('completed');
-          }}
-          onBack={() => {
-            if (window.confirm('本当にやめますか？')) {
-              setIsBonus(false);
-              setMode('setup');
-            }
-          }}
-        />
+        isNight ? (
+          <NightActiveView
+            tasks={currentTasks}
+            bedTime={bedTime}
+            onComplete={() => handleMissionComplete()}
+            onBack={() => setMode('setup')}
+          />
+        ) : (
+          <ActiveView
+            tasks={currentTasks}
+            departureTime={departureTime}
+            isBonus={isBonus}
+            onBonusDetected={() => setIsBonus(true)}
+            onComplete={(totalActualSeconds) => handleMissionComplete(totalActualSeconds)}
+            onBack={() => {
+              if (window.confirm('本当にやめますか？')) {
+                setIsBonus(false);
+                setMode('setup');
+              }
+            }}
+          />
+        )
       )}
 
       {mode === 'completed' && (
-        <CompletionView
-          isBonus={isBonus}
-          isSuccess={logs.length > 0 ? logs[logs.length - 1].isSuccess : false}
-          currentStamps={stampCard.currentStamps}
-          totalSlots={TOTAL_STAMP_SLOTS}
-          onReset={() => {
-            setIsBonus(false);
-            if (stampCard.currentStamps >= TOTAL_STAMP_SLOTS) {
-              setMode('reward');
-            } else {
-              setMode('setup');
-            }
-          }}
-        />
+        isNight ? (
+          <NightCompletionView
+            currentStamps={stampCard.currentStamps}
+            totalSlots={TOTAL_STAMP_SLOTS}
+            onReset={handleCompletionReset}
+          />
+        ) : (
+          <CompletionView
+            isBonus={isBonus}
+            isSuccess={logs.length > 0 ? logs[logs.length - 1].isSuccess : false}
+            currentStamps={stampCard.currentStamps}
+            totalSlots={TOTAL_STAMP_SLOTS}
+            onReset={handleCompletionReset}
+          />
+        )
       )}
 
       {mode === 'reward' && (
@@ -306,16 +250,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
           childName={name}
           rank={stampCard.rank}
           logs={logs}
-          onAccept={(medal) => {
-            setStampCard(prev => ({
-              ...prev,
-              currentStamps: 0,
-              totalRewards: prev.totalRewards + 1,
-              rank: Math.min(prev.rank + 1, MAX_RANK),
-              medals: [...prev.medals, medal]
-            }));
-            setMode('stamp');
-          }}
+          onAccept={handleRewardAccept}
         />
       )}
 

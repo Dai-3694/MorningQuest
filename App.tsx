@@ -6,6 +6,17 @@ import { RoutineManager } from './components/RoutineManager';
 import { PWAUpdateNotification } from './components/PWAUpdateNotification';
 import { Maximize, Minimize, ArrowLeft } from 'lucide-react';
 
+// フルスクリーンボタンを共通コンポーネントとして切り出し
+const FullscreenButton: React.FC<{ isFullscreen: boolean; onToggle: () => void }> = ({ isFullscreen, onToggle }) => (
+  <button
+    onClick={onToggle}
+    className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-800/80 text-white p-2 rounded-full shadow-lg backdrop-blur hover:bg-slate-700 transition-opacity opacity-50 hover:opacity-100"
+    title="全画面表示"
+  >
+    {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+  </button>
+);
+
 const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [missionMode, setMissionMode] = useState<MissionMode | null>(null);
@@ -36,14 +47,7 @@ const App: React.FC = () => {
       <>
         <PWAUpdateNotification />
         <TopScreen onSelect={(mode) => setMissionMode(mode)} />
-        {/* フルスクリーンボタン */}
-        <button
-          onClick={toggleFullscreen}
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-800/80 text-white p-2 rounded-full shadow-lg backdrop-blur hover:bg-slate-700 transition-opacity opacity-50 hover:opacity-100"
-          title="全画面表示"
-        >
-          {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-        </button>
+        <FullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
       </>
     );
   }
@@ -67,25 +71,15 @@ const App: React.FC = () => {
         {missionMode === 'morning' ? '🌅 朝' : '🌙 夜'}
       </button>
 
-      {/* フルスクリーンボタン */}
-      <button
-        onClick={toggleFullscreen}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-800/80 text-white p-2 rounded-full shadow-lg backdrop-blur hover:bg-slate-700 transition-opacity opacity-50 hover:opacity-100"
-        title="全画面表示"
-      >
-        {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-      </button>
+      <FullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
 
       <div className="flex-1 flex flex-row overflow-hidden">
-        {/* Child 1 Area (Left) */}
         <RoutineManager
           childId="child1"
           initialName="プレイヤー1"
           themeColor="sky"
           missionMode={missionMode}
         />
-
-        {/* Child 2 Area (Right) */}
         <RoutineManager
           childId="child2"
           initialName="プレイヤー2"
