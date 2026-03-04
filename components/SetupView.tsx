@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { Task, TaskIcon, DEFAULT_TASKS } from '../types';
+import { Task, TaskIcon, DEFAULT_TASKS, DEFAULT_NIGHT_TASKS, MissionMode } from '../types';
 import { IconDisplay } from './IconDisplay';
 import { generateSchedule } from '../services/geminiService';
-import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Pencil, Check, X, Minus, Clock, User, ClipboardList, Award } from 'lucide-react';
+import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Pencil, Check, X, Minus, Clock, Moon, ClipboardList, Award } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface SetupViewProps {
@@ -17,9 +17,11 @@ interface SetupViewProps {
   onLog: () => void;
   onStamp: () => void;
   themeColor: string;
+  missionMode?: MissionMode;
 }
 
-export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setTasks, departureTime, setDepartureTime, onStart, onLog, onStamp, themeColor }) => {
+export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setTasks, departureTime, setDepartureTime, onStart, onLog, onStamp, themeColor, missionMode = 'morning' }) => {
+  const isNight = missionMode === 'night';
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -74,7 +76,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
 
   const handleReset = () => {
     if (window.confirm('初期設定に戻しますか？')) {
-      setTasks(DEFAULT_TASKS);
+      setTasks(isNight ? DEFAULT_NIGHT_TASKS : DEFAULT_TASKS);
       setEditingId(null);
     }
   };
@@ -145,15 +147,15 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
               />
               <Pencil size={14} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </div>
-            <h1 className="text-slate-400 font-bold text-xs tracking-widest uppercase">Morning Quest</h1>
+            <h1 className="text-slate-400 font-bold text-xs tracking-widest uppercase">{isNight ? 'Night Quest' : 'Morning Quest'}</h1>
           </div>
         </header>
 
         {/* Departure Time Setting */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-slate-600 font-bold">
-            <Clock size={24} className={theme.text} />
-            <span>出発時刻</span>
+            {isNight ? <Moon size={24} className={theme.text} /> : <Clock size={24} className={theme.text} />}
+            <span>{isNight ? '就寝時刻' : '出発時刻'}</span>
           </div>
           <input
             type="time"
@@ -321,15 +323,17 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
 
       {/* Floating Start Bar */}
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent">
-        <div className="text-center mb-2 text-xs font-bold text-slate-500">
-          今始めると <span className="text-lg text-slate-800 mx-1">{finishTimeStr}</span> 頃に完了予定
-        </div>
+        {!isNight && (
+          <div className="text-center mb-2 text-xs font-bold text-slate-500">
+            今始めると <span className="text-lg text-slate-800 mx-1">{finishTimeStr}</span> 頃に完了予定
+          </div>
+        )}
         <button
           onClick={onStart}
           className={`w-full py-4 ${theme.primary} ${theme.primaryHover} text-white text-xl font-black rounded-2xl ${theme.shadow} shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2 ring-2 ring-white`}
         >
-          <Play fill="currentColor" size={24} />
-          スタート！
+          {isNight ? <Moon size={24} /> : <Play fill="currentColor" size={24} />}
+          {isNight ? 'ナイトミッション開始！' : 'スタート！'}
         </button>
       </div>
     </div>

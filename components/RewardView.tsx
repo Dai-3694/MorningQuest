@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Medal, MissionLog } from '../types';
 import { Star, Gift, ArrowRight, ArrowUp } from 'lucide-react';
 import { generateRewardComment } from '../services/geminiService';
-import { getGrade, getRankClass, getRankTitle, isGradeUp, isMaxRank } from '../rankData';
+import { getGrade, getRankClass, getRankTitle, isGradeUp, isMaxRank, TOTAL_RANKS } from '../rankData';
+
+const TOTAL_STAMP_SLOTS = 15;
 
 interface RewardViewProps {
     childName: string;
@@ -89,7 +91,7 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
                 </div>
 
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-slate-800">10回達成！</h2>
+                    <h2 className="text-3xl font-black text-slate-800">{TOTAL_STAMP_SLOTS}回達成！</h2>
                     <p className={`text-xl font-bold ${grade.stampColor} flex items-center justify-center gap-2`}>
                         ランクアップ：{title}
                     </p>
