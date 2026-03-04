@@ -5,12 +5,12 @@ import { getGrade, getRankClass, getRankTitle, getRankTitleShort, GRADES, CLASSE
 
 interface StampViewProps {
     stampCard: StampCard;
+    totalSlots?: number;
     onBack: () => void;
     themeColor: string;
 }
 
-export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeColor }) => {
-    const totalSlots = 10;
+export const StampView: React.FC<StampViewProps> = ({ stampCard, totalSlots = 15, onBack, themeColor }) => {
     const currentStamps = stampCard.currentStamps;
 
     const grade = getGrade(stampCard.rank);
@@ -118,7 +118,7 @@ export const StampView: React.FC<StampViewProps> = ({ stampCard, onBack, themeCo
                     <div className={`absolute top-0 left-0 w-full h-4 ${grade.cardColor}`} />
 
                     <h3 className="text-center font-bold text-gray-700 mb-6 mt-2 text-lg">
-                        あさのミッション・スタンプ
+                        ミッション・スタンプカード
                     </h3>
 
                     <div className="grid grid-cols-5 gap-3">
