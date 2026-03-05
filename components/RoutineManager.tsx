@@ -105,11 +105,24 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [mode]);
 
-  // missionMode が切り替わったときは setup に戻す
+  // missionMode が切り替わったときは setup に戻す（ランクアップ未処理チェック付き）
   useEffect(() => {
-    setMode('setup');
     setIsBonus(false);
+    // missionMode 切替時にもランクアップ未処理があれば reward に遷移
+    if (stampCard.currentStamps >= TOTAL_STAMP_SLOTS) {
+      setMode('reward');
+    } else {
+      setMode('setup');
+    }
   }, [missionMode]);
+
+  // アプリ読み込み完了時にランクアップ未処理があれば自動的に reward 画面へ遷移
+  // （ブラウザリロードなどでランクアップが中断された場合のリカバリー）
+  useEffect(() => {
+    if (isLoaded && stampCard.currentStamps >= TOTAL_STAMP_SLOTS && mode === 'setup') {
+      setMode('reward');
+    }
+  }, [isLoaded, stampCard.currentStamps, mode]);
 
   // --- 朝/夜で切り替わる変数をここで一元定義 ---
   const currentTasks = isNight ? nightTasks : tasks;

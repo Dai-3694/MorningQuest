@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Medal, MissionLog } from '../types';
 import { Star, Gift, ArrowRight, ArrowUp } from 'lucide-react';
 import { generateRewardComment } from '../services/geminiService';
 import { getGrade, getRankClass, getRankTitle, isGradeUp, isMaxRank, TOTAL_RANKS } from '../rankData';
 
 const TOTAL_STAMP_SLOTS = 15;
+const AI_COMMENT_TIMEOUT_MS = 10000; // AIコメント取得のタイムアウト（10秒）
+const FALLBACK_COMMENT = '毎日の積み重ねが素晴らしいよ！これからも応援しているよ！';
 
 interface RewardViewProps {
     childName: string;
@@ -16,6 +18,7 @@ interface RewardViewProps {
 export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, onAccept }) => {
     const [comment, setComment] = useState<string>('メッセージを作成中...');
     const [showContent, setShowContent] = useState(false);
+    const isMounted = useRef(true);
 
     const grade = getGrade(rank);
     const rankClass = getRankClass(rank);
@@ -25,12 +28,34 @@ export const RewardView: React.FC<RewardViewProps> = ({ childName, rank, logs, o
     const maxRank = isMaxRank(rank);
 
     useEffect(() => {
+        isMounted.current = true;
+
         const fetchComment = async () => {
-            const msg = await generateRewardComment(childName, logs);
-            setComment(msg);
-            setShowContent(true);
+            try {
+                // AIコメント取得にタイムアウトを設定
+                const timeoutPromise = new Promise<string>((_, reject) =>
+                    setTimeout(() => reject(new Error('AI comment timeout')), AI_COMMENT_TIMEOUT_MS)
+                );
+                const commentPromise = generateRewardComment(childName, logs);
+                const msg = await Promise.race([commentPromise, timeoutPromise]);
+                if (isMounted.current) {
+                    setComment(msg);
+                }
+            } catch (error) {
+                console.error('AI comment failed, using fallback:', error);
+                if (isMounted.current) {
+                    setComment(FALLBACK_COMMENT);
+                }
+            } finally {
+                // コメント成功・失敗に関わらず、必ずコンテンツを表示する
+                if (isMounted.current) {
+                    setShowContent(true);
+                }
+            }
         };
         fetchComment();
+
+        return () => { isMounted.current = false; };
     }, [childName, logs]);
 
     const handleGotIt = () => {

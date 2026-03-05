@@ -3,6 +3,9 @@ import { Task, TaskIcon, TaskType, MissionLog } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// フォールバック用コメント（AIコメント取得失敗時に使用）
+const FALLBACK_REWARD_COMMENT = '毎日の積み重ねが素晴らしいよ！これからも応援しているよ！';
+
 export const generateSchedule = async (promptText: string): Promise<Task[]> => {
   try {
     const response = await ai.models.generateContent({
@@ -56,6 +59,12 @@ export const generateSchedule = async (promptText: string): Promise<Task[]> => {
 
 export const generateRewardComment = async (childName: string, logs: MissionLog[]): Promise<string> => {
   try {
+    // API キーが未設定の場合は早期リターン
+    if (!process.env.API_KEY) {
+      console.warn('API_KEY is not set, using fallback reward comment');
+      return FALLBACK_REWARD_COMMENT;
+    }
+
     // 最近の10件の実績を分析対象にする
     const recentLogs = logs.slice(-10);
     const successCount = recentLogs.filter(l => l.isSuccess).length;
@@ -81,10 +90,10 @@ export const generateRewardComment = async (childName: string, logs: MissionLog[
       `
     });
 
-    return response.text || "いつも頑張っているね！これからも応援しているよ！";
+    return response.text || FALLBACK_REWARD_COMMENT;
   } catch (error) {
     console.error("Gemini Reward Comment Error:", error);
-    return "10回達成おめでとう！毎日の積み重ねが素晴らしいよ！";
+    return FALLBACK_REWARD_COMMENT;
   }
 };
 
