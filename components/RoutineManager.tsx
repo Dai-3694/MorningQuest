@@ -170,13 +170,16 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
 
   // ランクアップ後の共通処理
   const handleRewardAccept = (medal: Medal) => {
-    setStampCard(prev => ({
-      ...prev,
-      currentStamps: 0,
-      totalRewards: prev.totalRewards + 1,
-      rank: Math.min(prev.rank + 1, MAX_RANK),
-      medals: [...prev.medals, medal],
-    }));
+    setStampCard(prev => {
+      const overflow = prev.currentStamps - TOTAL_STAMP_SLOTS;
+      return {
+        ...prev,
+        currentStamps: Math.max(overflow, 0),
+        totalRewards: prev.totalRewards + 1,
+        rank: Math.min(prev.rank + 1, MAX_RANK),
+        medals: [...prev.medals, medal],
+      };
+    });
     setMode('stamp');
   };
 
