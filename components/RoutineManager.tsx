@@ -174,7 +174,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
       const overflow = prev.currentStamps - TOTAL_STAMP_SLOTS;
       return {
         ...prev,
-        currentStamps: Math.max(overflow, 0),
+        currentStamps: overflow,
         totalRewards: prev.totalRewards + 1,
         rank: Math.min(prev.rank + 1, MAX_RANK),
         medals: [...prev.medals, medal],
