@@ -415,7 +415,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, is
         {/* バッファ表示 */}
         <div className="text-center font-bold text-sm">
           {metrics.diffMinutes >= 0 ? (
-            <span className="text-emerald-700">あと <span className="text-xl">{metrics.diffMinutes}</span> ふんよゆうがあるよ！</span>
+            <span className="text-emerald-700">あと <span className="text-xl">{metrics.diffMinutes}</span> ふん よゆうがあるよ！</span>
           ) : (
             <span className="text-rose-700"><span className="text-xl">{Math.abs(metrics.diffMinutes)}</span> ふんたりない！！</span>
           )}
