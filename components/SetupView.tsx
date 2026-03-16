@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Task, TaskIcon, DEFAULT_TASKS, DEFAULT_NIGHT_TASKS, MissionMode } from '../types';
 import { IconDisplay } from './IconDisplay';
 import { generateSchedule } from '../services/geminiService';
-import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Check, X, Minus, Clock, Moon, ClipboardList, Award } from 'lucide-react';
+import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Check, X, Minus, Clock, Moon, ClipboardList, Award, Pencil } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface SetupViewProps {
