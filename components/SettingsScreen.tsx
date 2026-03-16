@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChildState, ChildProfile, AgeGroup, createDefaultProfile } from '../types';
 import { ArrowLeft, Save } from 'lucide-react';
 
