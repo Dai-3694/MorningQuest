@@ -144,6 +144,15 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
       const deptDate = new Date();
       deptDate.setHours(deptHour, deptMinute, 0, 0);
       isSuccess = now <= deptDate;
+    } else {
+      const [bedHour, bedMinute] = bedTime.split(':').map(Number);
+      const bedDate = new Date(now);
+      bedDate.setHours(bedHour, bedMinute, 0, 0);
+      // 深夜またぎ対応: 就寝時刻が12時間以上前に見える場合は翌日扱い
+      if (bedDate.getTime() < now.getTime() - 12 * 60 * 60 * 1000) {
+        bedDate.setDate(bedDate.getDate() + 1);
+      }
+      isSuccess = now <= bedDate;
     }
 
     const newLog: MissionLog = {
@@ -246,6 +255,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
       {mode === 'completed' && (
         isNight ? (
           <NightCompletionView
+            isSuccess={logs.at(-1)?.isSuccess ?? false}
             currentStamps={stampCard.currentStamps}
             totalSlots={TOTAL_STAMP_SLOTS}
             onReset={handleCompletionReset}

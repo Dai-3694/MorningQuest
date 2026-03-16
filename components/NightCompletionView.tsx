@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react';
-import { Moon, Home, Star, Stamp } from 'lucide-react';
+import { Moon, Home, Star, Stamp, AlertCircle } from 'lucide-react';
 import { nightMissionCompleteMessages, getRandomMessage } from '../randomMessages';
 
 interface NightCompletionViewProps {
+  isSuccess: boolean;
   currentStamps: number;
   totalSlots: number;
   onReset: () => void;
 }
 
-export const NightCompletionView: React.FC<NightCompletionViewProps> = ({ currentStamps, totalSlots, onReset }) => {
+export const NightCompletionView: React.FC<NightCompletionViewProps> = ({ isSuccess, currentStamps, totalSlots, onReset }) => {
   const randomMessage = useMemo(() => getRandomMessage(nightMissionCompleteMessages), []);
 
   return (
@@ -54,31 +55,40 @@ export const NightCompletionView: React.FC<NightCompletionViewProps> = ({ curren
           {randomMessage}
         </p>
 
-        {/* スタンプ獲得 */}
-        <div className="mb-5 flex items-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black text-lg py-3 px-6 rounded-2xl shadow-lg animate-bounce">
-          <Stamp size={24} className="drop-shadow" />
-          <span>スタンプ 1個ゲット！</span>
-          <Star size={20} fill="currentColor" className="drop-shadow" />
-        </div>
-
-        {/* スタンプ進捗ミニカード */}
-        <div className="mb-8 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-md border border-violet-400/30 flex items-center gap-3">
-          <div className="flex gap-1">
-            {Array.from({ length: totalSlots }).map((_, idx) => (
-              <Star
-                key={idx}
-                size={18}
-                fill={idx < currentStamps ? 'currentColor' : 'none'}
-                className={`transition-all duration-300 ${
-                  idx < currentStamps ? 'text-violet-300 drop-shadow-sm' : 'text-white/20'
-                } ${idx === currentStamps - 1 ? 'animate-bounce' : ''}`}
-              />
-            ))}
+        {/* スタンプ獲得（成功時のみ） */}
+        {isSuccess ? (
+          <div className="mb-5 flex items-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black text-lg py-3 px-6 rounded-2xl shadow-lg animate-bounce">
+            <Stamp size={24} className="drop-shadow" />
+            <span>スタンプ 1個ゲット！</span>
+            <Star size={20} fill="currentColor" className="drop-shadow" />
           </div>
-          <span className="text-sm font-black text-violet-200">
-            {currentStamps}/{totalSlots}
-          </span>
-        </div>
+        ) : (
+          <div className="mb-5 flex items-center gap-3 bg-rose-800/80 text-white font-black text-lg py-3 px-6 rounded-2xl shadow-lg">
+            <AlertCircle size={24} className="drop-shadow shrink-0" />
+            <span>就寝時刻を過ぎていたためスタンプなし…</span>
+          </div>
+        )}
+
+        {/* スタンプ進捗ミニカード（成功時のみ） */}
+        {isSuccess && (
+          <div className="mb-8 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-md border border-violet-400/30 flex items-center gap-3">
+            <div className="flex gap-1">
+              {Array.from({ length: totalSlots }).map((_, idx) => (
+                <Star
+                  key={idx}
+                  size={18}
+                  fill={idx < currentStamps ? 'currentColor' : 'none'}
+                  className={`transition-all duration-300 ${
+                    idx < currentStamps ? 'text-violet-300 drop-shadow-sm' : 'text-white/20'
+                  } ${idx === currentStamps - 1 ? 'animate-bounce' : ''}`}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-black text-violet-200">
+              {currentStamps}/{totalSlots}
+            </span>
+          </div>
+        )}
 
         <p className="text-lg text-violet-200/70 font-bold mb-10">
           おやすみなさい！いい夢を 🌙
