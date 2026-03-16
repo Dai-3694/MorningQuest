@@ -1,14 +1,24 @@
 import React from 'react';
 import { MissionMode } from '../types';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Settings } from 'lucide-react';
 
 interface TopScreenProps {
   onSelect: (mode: MissionMode) => void;
+  onSettings: () => void;
 }
 
-export const TopScreen: React.FC<TopScreenProps> = ({ onSelect }) => {
+export const TopScreen: React.FC<TopScreenProps> = ({ onSelect, onSettings }) => {
   return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950 via-slate-800 to-slate-900 relative overflow-hidden">
+
+      {/* 設定ボタン */}
+      <button
+        onClick={onSettings}
+        className="absolute top-4 right-4 z-10 p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+        title="設定"
+      >
+        <Settings size={24} />
+      </button>
 
       {/* 背景の星 */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">

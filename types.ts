@@ -1,4 +1,23 @@
 
+export type AgeGroup = 'elementary-lower' | 'elementary-upper' | 'junior-high';
+
+export interface BonusSettings {
+  enabled: boolean;
+  earlyBirdTime: string; // "HH:mm"
+}
+
+export interface ChildProfile {
+  name: string;
+  ageGroup: AgeGroup;
+  bonusSettings: BonusSettings;
+}
+
+export const createDefaultProfile = (name: string): ChildProfile => ({
+  name,
+  ageGroup: 'elementary-lower',
+  bonusSettings: { enabled: false, earlyBirdTime: '06:30' },
+});
+
 export enum TaskIcon {
   SUN = 'sun',
   TOOTHBRUSH = 'toothbrush',
@@ -57,7 +76,8 @@ export interface StampCard {
 }
 
 export interface ChildState {
-  name: string; // プレイヤーの名前を追加
+  name: string; // プレイヤーの名前（後方互換のため維持）
+  profile?: ChildProfile; // プロフィール情報（新規追加）
   tasks: Task[];
   nightTasks: Task[]; // 夜用タスク
   departureTime: string; // Format "HH:mm"

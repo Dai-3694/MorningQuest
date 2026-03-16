@@ -3,12 +3,11 @@ import React, { useState } from 'react';
 import { Task, TaskIcon, DEFAULT_TASKS, DEFAULT_NIGHT_TASKS, MissionMode } from '../types';
 import { IconDisplay } from './IconDisplay';
 import { generateSchedule } from '../services/geminiService';
-import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Pencil, Check, X, Minus, Clock, Moon, ClipboardList, Award } from 'lucide-react';
+import { Trash2, Plus, Play, Sparkles, RotateCcw, ArrowUp, ArrowDown, Check, X, Minus, Clock, Moon, ClipboardList, Award } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface SetupViewProps {
   name: string;
-  setName: (name: string) => void;
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
   departureTime: string;
@@ -20,7 +19,7 @@ interface SetupViewProps {
   missionMode?: MissionMode;
 }
 
-export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setTasks, departureTime, setDepartureTime, onStart, onLog, onStamp, themeColor, missionMode = 'morning' }) => {
+export const SetupView: React.FC<SetupViewProps> = ({ name, tasks, setTasks, departureTime, setDepartureTime, onStart, onLog, onStamp, themeColor, missionMode = 'morning' }) => {
   const isNight = missionMode === 'night';
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -136,16 +135,11 @@ export const SetupView: React.FC<SetupViewProps> = ({ name, setName, tasks, setT
 </button>
           </div>
 
-          <div className="pt-12"> {/* Add padding to parent */}
-            <div className="relative group inline-flex justify-center items-center">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="名前を入力"
-                className={`text-2xl font-black text-center bg-transparent border-b-2 border-transparent hover:border-slate-300 focus:border-slate-400 focus:ring-0 w-48 transition-all ${theme.text} ${theme.placeholder}`}
-              />
-              <Pencil size={14} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="pt-12">
+            <div className="flex justify-center items-center">
+              <span className={`text-2xl font-black text-center ${theme.text}`}>
+                {name}
+              </span>
             </div>
             <h1 className="text-slate-400 font-bold text-xs tracking-widest uppercase">{isNight ? 'Night Quest' : 'Morning Quest'}</h1>
           </div>

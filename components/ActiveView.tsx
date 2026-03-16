@@ -12,11 +12,13 @@ interface ActiveViewProps {
   onBonusDetected: () => void;
   onComplete: (totalActualSeconds?: number) => void;
   onBack: () => void;
+  /** 早起きボーナス有効時の判定時刻。設定されている場合はこの時刻を閾値として使用する */
+  earlyBirdTime?: string; // "HH:mm"
 }
 
 type UrgencyLevel = 'safe' | 'warning' | 'danger';
 
-export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, isBonus, onBonusDetected, onComplete, onBack }) => {
+export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, isBonus, onBonusDetected, onComplete, onBack, earlyBirdTime }) => {
   // タスクの分類（typeプロパティを使用して堅牢に分類）
   const wakeUpTask = tasks.find(t => t.type === 'start');
   const departureTask = tasks.find(t => t.type === 'end');
@@ -197,16 +199,24 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, is
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // 早起きボーナス判定: 現在時刻が 出発時刻 - (タスク合計時間 + 10分) より前か
+  // 早起きボーナス判定: earlyBirdTime が指定されている場合はその時刻を基準に、
+  // 未指定の場合は 出発時刻 - (タスク合計時間 + 10分) を基準とする
   const checkEarlyBirdBonus = useCallback((): boolean => {
     const now = new Date();
-    const departure = getDepartureDate(now);
 
+    if (earlyBirdTime) {
+      const [h, m] = earlyBirdTime.split(':').map(Number);
+      const threshold = new Date(now);
+      threshold.setHours(h, m, 0, 0);
+      return now.getTime() < threshold.getTime();
+    }
+
+    const departure = getDepartureDate(now);
     const totalTaskMinutes = tasks.reduce((acc, t) => acc + t.durationMinutes, 0);
     const bonusThresholdMs = departure.getTime() - (totalTaskMinutes + 10) * 60 * 1000;
 
     return now.getTime() < bonusThresholdMs;
-  }, [departureTime, tasks]);
+  }, [departureTime, tasks, earlyBirdTime]);
 
   useEffect(() => {
     if (bonusCheckedRef.current) return;
