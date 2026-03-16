@@ -255,7 +255,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
       {mode === 'completed' && (
         isNight ? (
           <NightCompletionView
-            isSuccess={logs.length > 0 ? logs[logs.length - 1].isSuccess : false}
+            isSuccess={logs.at(-1)?.isSuccess ?? false}
             currentStamps={stampCard.currentStamps}
             totalSlots={TOTAL_STAMP_SLOTS}
             onReset={handleCompletionReset}
