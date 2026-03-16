@@ -53,6 +53,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
     medals: []
   });
   const [isBonus, setIsBonus] = useState(false);
+  const [missionStartedAt, setMissionStartedAt] = useState<string | undefined>(undefined);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load state from local storage
@@ -119,6 +120,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
   // missionMode が切り替わったときは setup に戻す（ランクアップ未処理チェック付き）
   useEffect(() => {
     setIsBonus(false);
+    setMissionStartedAt(undefined);
     // missionMode 切替時にもランクアップ未処理があれば reward に遷移
     if (stampCard.currentStamps >= TOTAL_STAMP_SLOTS) {
       setMode('reward');
@@ -206,6 +208,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
   // 完了後の画面遷移
   const handleCompletionReset = () => {
     setIsBonus(false);
+    setMissionStartedAt(undefined);
     if (stampCard.currentStamps >= TOTAL_STAMP_SLOTS) {
       setMode('reward');
     } else {
@@ -229,7 +232,12 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
           setTasks={setCurrentTasks}
           departureTime={currentTime}
           setDepartureTime={setCurrentTime}
-          onStart={() => setMode('active')}
+          onStart={() => {
+            if (!isNight) {
+              setMissionStartedAt(new Date().toISOString());
+            }
+            setMode('active');
+          }}
           onLog={() => setMode('log')}
           onStamp={() => setMode('stamp')}
           themeColor={themeColor}
@@ -252,10 +260,12 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
             isBonus={isBonus}
             onBonusDetected={() => setIsBonus(true)}
             earlyBirdTime={profile.bonusSettings.enabled ? profile.bonusSettings.earlyBirdTime : undefined}
+            missionStartedAt={missionStartedAt}
             onComplete={(totalActualSeconds) => handleMissionComplete(totalActualSeconds)}
             onBack={() => {
               if (window.confirm('本当にやめますか？')) {
                 setIsBonus(false);
+                setMissionStartedAt(undefined);
                 setMode('setup');
               }
             }}
