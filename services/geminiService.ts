@@ -1,10 +1,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Task, TaskIcon, TaskType, MissionLog } from '../types';
+import { Task, TaskIcon, TaskType, MissionLog, AgeGroup } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// フォールバック用コメント（AIコメント取得失敗時に使用）
-const FALLBACK_REWARD_COMMENT = '毎日の積み重ねが素晴らしいよ！これからも応援しているよ！';
+// 年齢区分ごとのフォールバックコメント
+const FALLBACK_REWARD_COMMENTS: Record<AgeGroup, string> = {
+  'elementary-lower': 'まいにち よく がんばったね！ あしたも いっしょに がんばろう！',
+  'elementary-upper': '毎日コツコツ続けてえらい！明日もまた一緒に頑張ろう！',
+  'junior-high': '毎日の積み重ねが素晴らしい。これからも応援しているよ！',
+};
+
+// 年齢区分ごとのプロンプト補足
+const AGE_GROUP_PROMPT: Record<AgeGroup, string> = {
+  'elementary-lower': 'ひらがな多め・難しい漢字は使わない・やさしい短文で書いてください。',
+  'elementary-upper': '基本的な漢字は使用可。自然な子ども向けの文体で書いてください。',
+  'junior-high': '漢字を自然に使用し、幼すぎない文体で書いてください。',
+};
 
 export const generateSchedule = async (promptText: string): Promise<Task[]> => {
   try {
@@ -57,12 +68,13 @@ export const generateSchedule = async (promptText: string): Promise<Task[]> => {
   }
 };
 
-export const generateRewardComment = async (childName: string, logs: MissionLog[]): Promise<string> => {
+export const generateRewardComment = async (childName: string, logs: MissionLog[], ageGroup: AgeGroup = 'elementary-lower'): Promise<string> => {
+  const fallback = FALLBACK_REWARD_COMMENTS[ageGroup];
   try {
     // API キーが未設定の場合は早期リターン
     if (!process.env.API_KEY) {
       console.warn('API_KEY is not set, using fallback reward comment');
-      return FALLBACK_REWARD_COMMENT;
+      return fallback;
     }
 
     // 最近の10件の実績を分析対象にする
@@ -87,13 +99,14 @@ export const generateRewardComment = async (childName: string, logs: MissionLog[
 
         この実績に基づいて、子供が明日からもまた頑張りたくなるような、具体的で心のこもった褒め言葉（100文字程度）を日本語で生成してください。
         「〜だよ」「〜だね」といった親しみやすい口調でお願いします。
+        ${AGE_GROUP_PROMPT[ageGroup]}
       `
     });
 
-    return response.text || FALLBACK_REWARD_COMMENT;
+    return response.text || fallback;
   } catch (error) {
     console.error("Gemini Reward Comment Error:", error);
-    return FALLBACK_REWARD_COMMENT;
+    return fallback;
   }
 };
 

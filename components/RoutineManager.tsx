@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Task, AppMode, DEFAULT_TASKS, DEFAULT_NIGHT_TASKS, ChildState, TaskType, MissionMode } from '../types';
+import { Task, AppMode, DEFAULT_TASKS, DEFAULT_NIGHT_TASKS, ChildState, TaskType, MissionMode, ChildProfile, createDefaultProfile } from '../types';
 import { SetupView } from './SetupView';
 import { ActiveView } from './ActiveView';
 import { CompletionView } from './CompletionView';
@@ -40,7 +40,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
   const isNight = missionMode === 'night';
 
   const [mode, setMode] = useState<AppMode>('setup');
-  const [name, setName] = useState<string>(initialName);
+  const [profile, setProfile] = useState<ChildProfile>(createDefaultProfile(initialName));
   const [tasks, setTasks] = useState<Task[]>(DEFAULT_TASKS);
   const [nightTasks, setNightTasks] = useState<Task[]>(DEFAULT_NIGHT_TASKS);
   const [departureTime, setDepartureTime] = useState<string>('08:00');
@@ -68,7 +68,18 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
         }
         setDepartureTime(parsed.departureTime || '08:00');
         setBedTime(parsed.bedTime || '21:00');
-        if (parsed.name) setName(parsed.name);
+
+        // プロフィールのマイグレーション: profile がなければ旧 name からデフォルトを生成
+        const savedName = parsed.name || initialName;
+        const migratedProfile: ChildProfile = parsed.profile
+          ? {
+              ...createDefaultProfile(savedName),
+              ...parsed.profile,
+              name: parsed.profile.name || savedName,
+            }
+          : createDefaultProfile(savedName);
+        setProfile(migratedProfile);
+
         if (parsed.logs) setLogs(parsed.logs);
         if (parsed.stampCard) {
           setStampCard({
@@ -88,10 +99,10 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
   // Save state whenever it changes
   useEffect(() => {
     if (isLoaded) {
-      const stateToSave: ChildState = { name, tasks, nightTasks, departureTime, bedTime, logs, stampCard };
+      const stateToSave: ChildState = { name: profile.name, profile, tasks, nightTasks, departureTime, bedTime, logs, stampCard };
       localStorage.setItem(storageKey, JSON.stringify(stateToSave));
     }
-  }, [name, tasks, nightTasks, departureTime, bedTime, logs, stampCard, isLoaded, storageKey]);
+  }, [profile, tasks, nightTasks, departureTime, bedTime, logs, stampCard, isLoaded, storageKey]);
 
   // Prevent accidental navigation away during active mode
   useEffect(() => {
@@ -208,13 +219,12 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
     <div className={`flex-1 flex flex-col relative overflow-hidden border-r-4 last:border-r-0 ${borderClass} ${bgClass}`}>
       {/* プレイヤー名ラベル */}
       <div className={`absolute top-0 left-0 z-30 px-4 py-1 rounded-br-xl font-bold text-white text-sm shadow-md ${themeColor === 'rose' ? 'bg-rose-400' : 'bg-sky-400'}`}>
-        {name}
+        {profile.name}
       </div>
 
       {mode === 'setup' && (
         <SetupView
-          name={name}
-          setName={setName}
+          name={profile.name}
           tasks={currentTasks}
           setTasks={setCurrentTasks}
           departureTime={currentTime}
@@ -241,6 +251,7 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
             departureTime={departureTime}
             isBonus={isBonus}
             onBonusDetected={() => setIsBonus(true)}
+            earlyBirdTime={profile.bonusSettings.enabled ? profile.bonusSettings.earlyBirdTime : undefined}
             onComplete={(totalActualSeconds) => handleMissionComplete(totalActualSeconds)}
             onBack={() => {
               if (window.confirm('本当にやめますか？')) {
@@ -273,9 +284,10 @@ export const RoutineManager: React.FC<RoutineManagerProps> = ({ childId, initial
 
       {mode === 'reward' && (
         <RewardView
-          childName={name}
+          childName={profile.name}
           rank={stampCard.rank}
           logs={logs}
+          ageGroup={profile.ageGroup}
           onAccept={handleRewardAccept}
         />
       )}
