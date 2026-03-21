@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ChildState, ChildProfile, AgeGroup, createDefaultProfile } from '../types';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Download, Upload } from 'lucide-react';
 
 interface PlayerSettingsProps {
   label: string;
@@ -15,6 +15,28 @@ const AGE_GROUP_LABELS: Record<AgeGroup, string> = {
   'junior-high': '中学',
 };
 
+const CHILD_IDS = ['child1', 'child2'] as const;
+type ChildId = typeof CHILD_IDS[number];
+
+const CHILD_LABELS: Record<ChildId, string> = { child1: 'プレイヤー1', child2: 'プレイヤー2' };
+const CHILD_THEMES: Record<ChildId, 'sky' | 'rose'> = { child1: 'sky', child2: 'rose' };
+const CHILD_DEFAULT_NAMES: Record<ChildId, string> = { child1: 'プレイヤー1', child2: 'プレイヤー2' };
+const STORAGE_KEY_PREFIX = 'mq_state_';
+const EXPORT_FILE_PREFIX = 'daily-quest-backup';
+const EXPORT_SCHEMA_VERSION = 1;
+
+interface SettingsScreenProps {
+  onBack: () => void;
+  onDataImported?: () => void;
+}
+
+interface AppExportData {
+  app: string;
+  version: number;
+  exportedAt: string;
+  data: Record<ChildId, ChildState>;
+}
+
 const PlayerSettings: React.FC<PlayerSettingsProps> = ({ label, themeColor, profile, onChange }) => {
   const accent = themeColor === 'rose' ? 'text-rose-600' : 'text-sky-600';
   const border = themeColor === 'rose' ? 'border-rose-300 focus:border-rose-500' : 'border-sky-300 focus:border-sky-500';
@@ -23,11 +45,9 @@ const PlayerSettings: React.FC<PlayerSettingsProps> = ({ label, themeColor, prof
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      {/* プレイヤーラベル */}
       <div className={`px-4 py-2 ${badgeBg} text-white font-bold text-sm`}>{label}</div>
 
       <div className="p-4 space-y-4">
-        {/* 名前 */}
         <div>
           <label className={`block text-xs font-bold ${accent} mb-1`}>なまえ</label>
           <input
@@ -39,7 +59,6 @@ const PlayerSettings: React.FC<PlayerSettingsProps> = ({ label, themeColor, prof
           />
         </div>
 
-        {/* 年齢区分 */}
         <div>
           <label className={`block text-xs font-bold ${accent} mb-1`}>ねんれい区分</label>
           <div className="flex gap-2 flex-wrap">
@@ -59,7 +78,6 @@ const PlayerSettings: React.FC<PlayerSettingsProps> = ({ label, themeColor, prof
           </div>
         </div>
 
-        {/* 早起きボーナス */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className={`text-xs font-bold ${accent}`}>早起きボーナス</label>
@@ -82,7 +100,6 @@ const PlayerSettings: React.FC<PlayerSettingsProps> = ({ label, themeColor, prof
             </button>
           </div>
 
-          {/* 早起き時刻（ボーナスON時のみ表示） */}
           {profile.bonusSettings.enabled && (
             <div className="flex items-center gap-3 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
               <span className="text-xs font-bold text-slate-500">ボーナス時刻</span>
@@ -105,24 +122,17 @@ const PlayerSettings: React.FC<PlayerSettingsProps> = ({ label, themeColor, prof
   );
 };
 
-interface SettingsScreenProps {
-  onBack: () => void;
+function getStorageKey(childId: ChildId): string {
+  return `${STORAGE_KEY_PREFIX}${childId}`;
 }
 
-const CHILD_IDS = ['child1', 'child2'] as const;
-const CHILD_LABELS = { child1: 'プレイヤー1', child2: 'プレイヤー2' };
-const CHILD_THEMES: Record<string, 'sky' | 'rose'> = { child1: 'sky', child2: 'rose' };
-const CHILD_DEFAULT_NAMES: Record<string, string> = { child1: 'プレイヤー1', child2: 'プレイヤー2' };
-
-/** localStorage から ChildProfile を読み込む（マイグレーション付き） */
-function loadProfile(childId: string): ChildProfile {
+function loadProfile(childId: ChildId): ChildProfile {
   const defaultName = CHILD_DEFAULT_NAMES[childId] ?? childId;
   try {
-    const saved = localStorage.getItem(`mq_state_${childId}`);
+    const saved = localStorage.getItem(getStorageKey(childId));
     if (!saved) return createDefaultProfile(defaultName);
     const parsed: ChildState = JSON.parse(saved);
     if (parsed.profile) {
-      // profile が存在する場合はデフォルトとマージして欠損フィールドを補完（undefined 値は除外）
       const defaults = createDefaultProfile(parsed.name || defaultName);
       return {
         name: parsed.profile.name || defaults.name,
@@ -133,16 +143,14 @@ function loadProfile(childId: string): ChildProfile {
         },
       };
     }
-    // 旧データ: name のみある場合
     return createDefaultProfile(parsed.name || defaultName);
   } catch {
     return createDefaultProfile(defaultName);
   }
 }
 
-/** localStorage に ChildProfile を保存 */
-function saveProfile(childId: string, profile: ChildProfile): void {
-  const key = `mq_state_${childId}`;
+function saveProfile(childId: ChildId, profile: ChildProfile): void {
+  const key = getStorageKey(childId);
   try {
     const saved = localStorage.getItem(key);
     const base: Partial<ChildState> = saved ? JSON.parse(saved) : {};
@@ -161,25 +169,148 @@ function saveProfile(childId: string, profile: ChildProfile): void {
   }
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
-  const [profiles, setProfiles] = useState<Record<string, ChildProfile>>(() =>
-    Object.fromEntries(CHILD_IDS.map((id) => [id, loadProfile(id)]))
+function collectExportData(): AppExportData {
+  const data = Object.fromEntries(
+    CHILD_IDS.map((childId) => {
+      const saved = localStorage.getItem(getStorageKey(childId));
+      const parsed: ChildState = saved
+        ? JSON.parse(saved)
+        : {
+            name: CHILD_DEFAULT_NAMES[childId],
+            profile: createDefaultProfile(CHILD_DEFAULT_NAMES[childId]),
+            tasks: [],
+            nightTasks: [],
+            departureTime: '08:00',
+            bedTime: '21:00',
+            logs: [],
+            stampCard: undefined,
+          };
+
+      return [childId, parsed];
+    })
+  ) as Record<ChildId, ChildState>;
+
+  return {
+    app: 'daily-quest',
+    version: EXPORT_SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
+    data,
+  };
+}
+
+function isValidChildState(value: unknown): value is ChildState {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<ChildState>;
+  return typeof candidate.name === 'string'
+    && Array.isArray(candidate.tasks)
+    && Array.isArray(candidate.nightTasks)
+    && typeof candidate.departureTime === 'string'
+    && typeof candidate.bedTime === 'string';
+}
+
+function isValidExportData(value: unknown): value is AppExportData {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<AppExportData>;
+  if (candidate.app !== 'daily-quest') return false;
+  if (typeof candidate.version !== 'number') return false;
+  if (!candidate.data || typeof candidate.data !== 'object') return false;
+
+  return CHILD_IDS.every((childId) => isValidChildState((candidate.data as Record<string, unknown>)[childId]));
+}
+
+function downloadJsonFile(data: AppExportData): void {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  anchor.href = url;
+  anchor.download = `${EXPORT_FILE_PREFIX}-${date}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onDataImported }) => {
+  const [profiles, setProfiles] = useState<Record<ChildId, ChildProfile>>(() =>
+    Object.fromEntries(CHILD_IDS.map((id) => [id, loadProfile(id)])) as Record<ChildId, ChildProfile>
   );
   const [saved, setSaved] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleChange = (childId: string, updated: ChildProfile) => {
+  const handleChange = (childId: ChildId, updated: ChildProfile) => {
     setProfiles((prev) => ({ ...prev, [childId]: updated }));
     setSaved(false);
+    setMessage(null);
+    setErrorMessage(null);
   };
 
   const handleSave = () => {
     CHILD_IDS.forEach((id) => saveProfile(id, profiles[id]));
     setSaved(true);
+    setMessage('設定を保存しました。');
+    setErrorMessage(null);
+  };
+
+  const handleExport = () => {
+    try {
+      CHILD_IDS.forEach((id) => saveProfile(id, profiles[id]));
+      const exportData = collectExportData();
+      downloadJsonFile(exportData);
+      setSaved(true);
+      setMessage('全データをJSONでエクスポートしました。');
+      setErrorMessage(null);
+    } catch (error) {
+      console.error('Export failed:', error);
+      setErrorMessage('エクスポートに失敗しました。');
+      setMessage(null);
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+
+      if (!isValidExportData(parsed)) {
+        throw new Error('Invalid backup format');
+      }
+
+      if (!window.confirm('現在の端末のデータを、バックアップファイルの内容で上書きします。よろしいですか？')) {
+        return;
+      }
+
+      CHILD_IDS.forEach((childId) => {
+        localStorage.setItem(getStorageKey(childId), JSON.stringify(parsed.data[childId]));
+      });
+
+      setProfiles(
+        Object.fromEntries(CHILD_IDS.map((id) => [id, loadProfile(id)])) as Record<ChildId, ChildProfile>
+      );
+      setSaved(true);
+      setMessage('インポートが完了しました。画面に最新データを反映します。');
+      setErrorMessage(null);
+      onDataImported?.();
+    } catch (error) {
+      console.error('Import failed:', error);
+      setErrorMessage('インポートに失敗しました。Daily QuestのバックアップJSONか確認してください。');
+      setMessage(null);
+    }
   };
 
   return (
     <div className="h-screen w-full flex flex-col bg-gradient-to-b from-indigo-950 via-slate-800 to-slate-900 overflow-hidden">
-      {/* ヘッダー */}
       <div className="flex items-center gap-3 px-4 py-3 bg-slate-900/60 backdrop-blur border-b border-slate-700">
         <button
           onClick={onBack}
@@ -190,8 +321,44 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
         <h1 className="text-white font-black text-lg tracking-wide">設定</h1>
       </div>
 
-      {/* コンテンツ */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="bg-slate-900/40 border border-slate-700 rounded-2xl p-4 text-white space-y-3">
+          <div>
+            <h2 className="font-black text-base">データの移行</h2>
+            <p className="text-sm text-slate-300 mt-1">
+              2人分の記録・スタンプ・タスク設定・プロフィールなど、端末内の全データをまとめてJSONで保存/復元できます。
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={handleExport}
+              className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <Download size={18} />
+              エクスポート
+            </button>
+            <button
+              onClick={handleImportClick}
+              className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <Upload size={18} />
+              インポート
+            </button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportFile}
+            className="hidden"
+          />
+
+          {message && <p className="text-sm font-bold text-emerald-300">{message}</p>}
+          {errorMessage && <p className="text-sm font-bold text-rose-300">{errorMessage}</p>}
+        </div>
+
         {CHILD_IDS.map((id) => (
           <PlayerSettings
             key={id}
@@ -203,7 +370,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
         ))}
       </div>
 
-      {/* 保存ボタン */}
       <div className="p-4 bg-slate-900/60 border-t border-slate-700">
         <button
           onClick={handleSave}

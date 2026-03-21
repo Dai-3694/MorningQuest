@@ -7,7 +7,6 @@ import { SettingsScreen } from './components/SettingsScreen';
 import { PWAUpdateNotification } from './components/PWAUpdateNotification';
 import { Maximize, Minimize, ArrowLeft } from 'lucide-react';
 
-// フルスクリーンボタンを共通コンポーネントとして切り出し
 const FullscreenButton: React.FC<{ isFullscreen: boolean; onToggle: () => void }> = ({ isFullscreen, onToggle }) => (
   <button
     onClick={onToggle}
@@ -23,6 +22,7 @@ type AppScreen = 'top' | 'settings' | MissionMode;
 const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [screen, setScreen] = useState<AppScreen>('top');
+  const [settingsRefreshKey, setSettingsRefreshKey] = useState(0);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -44,7 +44,6 @@ const App: React.FC = () => {
     }
   };
 
-  // トップ画面
   if (screen === 'top') {
     return (
       <>
@@ -58,23 +57,23 @@ const App: React.FC = () => {
     );
   }
 
-  // 設定画面
   if (screen === 'settings') {
     return (
       <>
         <PWAUpdateNotification />
-        <SettingsScreen onBack={() => setScreen('top')} />
+        <SettingsScreen
+          onBack={() => setScreen('top')}
+          onDataImported={() => setSettingsRefreshKey((prev) => prev + 1)}
+        />
       </>
     );
   }
 
-  // ミッション画面（screen は MissionMode）
   const missionMode = screen as MissionMode;
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-gray-50 relative">
       <PWAUpdateNotification />
 
-      {/* トップに戻るボタン */}
       <button
         onClick={() => setScreen('top')}
         className={`absolute top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-md backdrop-blur transition-opacity opacity-60 hover:opacity-100 ${
@@ -92,12 +91,14 @@ const App: React.FC = () => {
 
       <div className="flex-1 flex flex-row overflow-hidden">
         <RoutineManager
+          key={`child1-${settingsRefreshKey}`}
           childId="child1"
           initialName="プレイヤー1"
           themeColor="sky"
           missionMode={missionMode}
         />
         <RoutineManager
+          key={`child2-${settingsRefreshKey}`}
           childId="child2"
           initialName="プレイヤー2"
           themeColor="rose"
