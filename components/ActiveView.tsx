@@ -413,17 +413,17 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ tasks, departureTime, is
           />
           <div className="absolute inset-0 flex items-center justify-between px-3 text-xs font-black text-slate-700 drop-shadow-sm pointer-events-none">
             <span className="bg-white/50 px-1 rounded">残り: {Math.ceil(metrics.remainingTaskMinutes)}分</span>
-            <span className="bg-white/50 px-1 rounded">出発まで: {Math.max(0, Math.ceil(metrics.minutesToDeparture))}分</span>
+            <span className={`bg-white/50 px-1 rounded ${visualConfig.text}`}>
+              {metrics.diffMinutes >= 0 ? 'よゆう' : 'たりない'}: {Math.abs(metrics.diffMinutes)}分
+            </span>
           </div>
         </div>
 
-        {/* バッファ表示 */}
+        {/* 出発までの残り時間表示（メイン） */}
         <div className="text-center font-bold text-sm">
-          {metrics.diffMinutes >= 0 ? (
-            <span className="text-emerald-700">あと <span className="text-xl">{metrics.diffMinutes}</span> ふん よゆうがあるよ！</span>
-          ) : (
-            <span className="text-rose-700"><span className="text-xl">{Math.abs(metrics.diffMinutes)}</span> ふん たりない！！</span>
-          )}
+          <span className={visualConfig.text}>
+            しゅっぱつまで あと <span className="text-xl">{Math.max(0, Math.ceil(metrics.minutesToDeparture))}</span> ふん！
+          </span>
         </div>
       </div>
 
